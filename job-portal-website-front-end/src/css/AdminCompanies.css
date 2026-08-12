@@ -1,0 +1,113 @@
+
+.au-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.au-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.au-tab:hover {
+  color: #1e40af;
+}
+
+.au-tab.active {
+  color: #1e3a8a;
+  border-bottom-color: #1e3a8a;
+}
+
+.au-tab-count {
+  min-width: 20px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+
+.au-company-cell {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.au-company-logo {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #f3f4f6;
+}
+
+.au-job-title-cell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.au-job-company {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.au-status-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 16px 0;
+  border-bottom: 1px solid #f1f2f4;
+}
+
+.au-status-label {
+  font-size: 13px;
+  color: #9ca3af;
+  margin-right: 4px;
+}
+
+.au-status-actions .au-dropdown {
+  min-width: 180px;
+}
+
+.au-status-actions .au-dropdown-toggle {
+  height: 38px;
+}
+
+.au-status-actions .au-dropdown-toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.au-status-pending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.au-status-approved {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.au-status-rejected {
+  background: #fee2e2;
+  color: #b91c1c;
+}
