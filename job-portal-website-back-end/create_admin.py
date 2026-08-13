@@ -1,7 +1,6 @@
-import hashlib
-
 from web import app, db
 from web.models import User, UserRole
+from web.utils.password_hasher import hash_password
 
 USERNAME = "admin"
 EMAIL = "admin@jobportal.com"
@@ -16,14 +15,14 @@ if __name__ == "__main__":
         if existing:
             
             existing.role = UserRole.ADMIN
-            existing.password_hash = hashlib.md5(PASSWORD.encode("utf-8")).hexdigest()
+            existing.password_hash = hash_password(PASSWORD)
             db.session.commit()
             print(f"✅ Đã cập nhật tài khoản admin sẵn có (id={existing.id})")
         else:
             admin = User(
                 username=USERNAME,
                 email=EMAIL,
-                password_hash=hashlib.md5(PASSWORD.encode("utf-8")).hexdigest(),
+                password_hash=hash_password(PASSWORD),
                 role=UserRole.ADMIN
             )
             db.session.add(admin)

@@ -6,7 +6,7 @@ from web.models import (
     Notification, NotificationType
 )
 from datetime import datetime, timedelta, date
-import hashlib
+from web.utils.password_hasher import hash_password
 
 if __name__ == "__main__":
     with app.app_context():
@@ -70,7 +70,7 @@ if __name__ == "__main__":
         admin_user = User(
             username="admin",
             email="admin@jobportal.com",
-            password_hash=hashlib.md5("admin123".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("admin123"),
             role=UserRole.ADMIN
         )
         db.session.add(admin_user)
@@ -79,77 +79,77 @@ if __name__ == "__main__":
         ungvien1 = User(
             username="nguyenvana",
             email="nguyenvana@gmail.com",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.UNGVIEN
         )
         
         nhatuyendung1 = User(
             username="fpt_hr",
             email="hr@fpt.com.vn",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.NHATUYENDUNG
         )
         
         nhatuyendung2 = User(
             username="viettel_hr",
             email="hr@viettel.com.vn",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.NHATUYENDUNG
         )
         
         nhatuyendung3 = User(
             username="vnpt_hr",
             email="hr@vnpt.vn",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.NHATUYENDUNG
         )
         
         nhatuyendung4 = User(
             username="momo_hr",
             email="hr@momo.vn",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.NHATUYENDUNG
         )
         
         nhatuyendung5 = User(
             username="tiki_hr",
             email="hr@tiki.vn",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.NHATUYENDUNG
         )
         
         nhatuyendung6 = User(
             username="shopee_hr",
             email="hr@shopee.vn",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.NHATUYENDUNG
         )
         
         nhatuyendung7 = User(
             username="grab_hr",
             email="hr@grab.vn",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.NHATUYENDUNG
         )
         
         nhatuyendung8 = User(
             username="be_hr",
             email="hr@be.com.vn",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.NHATUYENDUNG
         )
         
         nhatuyendung9 = User(
             username="vingroup_hr",
             email="hr@vingroup.net",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.NHATUYENDUNG
         )
         
         nhatuyendung10 = User(
             username="tpbank_hr",
             email="hr@tpbank.com.vn",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.NHATUYENDUNG
         )
         
@@ -717,70 +717,70 @@ if __name__ == "__main__":
         ungvien2 = User(
             username="tranthib",
             email="tranthib@gmail.com",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.UNGVIEN
         )
         
         ungvien3 = User(
             username="lequangc",
             email="lequangc@gmail.com",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.UNGVIEN
         )
         
         ungvien4 = User(
             username="phamthid",
             email="phamthid@gmail.com",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.UNGVIEN
         )
         
         ungvien5 = User(
             username="hoangvane",
             email="hoangvane@gmail.com",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.UNGVIEN
         )
         
         ungvien6 = User(
             username="vuthif",
             email="vuthif@gmail.com",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.UNGVIEN
         )
         
         ungvien7 = User(
             username="dangquocg",
             email="dangquocg@gmail.com",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.UNGVIEN
         )
         
         ungvien8 = User(
             username="buithih",
             email="buithih@gmail.com",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.UNGVIEN
         )
         
         ungvien9 = User(
             username="dovani",
             email="dovani@gmail.com",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.UNGVIEN
         )
         
         ungvien10 = User(
             username="lyhoangk",
             email="lyhoangk@gmail.com",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.UNGVIEN
         )
         
         ungvien11 = User(
             username="ngominhm",
             email="ngominhm@gmail.com",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.UNGVIEN
         )
         

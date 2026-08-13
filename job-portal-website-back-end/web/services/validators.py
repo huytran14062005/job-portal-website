@@ -14,6 +14,7 @@ class Limits:
     USERNAME_MAX = 50
     EMAIL_MAX = 100
     PASSWORD_MIN = 8
+    PASSWORD_MAX_BYTES = 72
     PHONE_MIN = 10
     PHONE_MAX = 11
 
@@ -288,6 +289,9 @@ def validate_password_strength(password):
 
     if len(text) < Limits.PASSWORD_MIN:
         raise ValidationError(f"Password phải có ít nhất {Limits.PASSWORD_MIN} ký tự.")
+
+    if len(text.encode('utf-8')) > Limits.PASSWORD_MAX_BYTES:
+        raise ValidationError(f"Password must not exceed {Limits.PASSWORD_MAX_BYTES} bytes.")
 
     if not re.search(r'[A-Z]', text):
         raise ValidationError("Password phải chứa ít nhất một chữ hoa.")

@@ -1,12 +1,7 @@
-import hashlib
-
 from web import db
 from web.models import User, UserRole
+from web.utils.password_hasher import hash_password, verify_password
 from .profile_dao import build_applicant_profile, build_company_profile
-
-
-def hash_password(raw_password):
-    return str(hashlib.md5(raw_password.encode('utf-8')).hexdigest())
 
 
 def get_user_by_id(user_id):
@@ -26,10 +21,12 @@ def get_user_by_email_insensitive(email):
 
 
 def auth_user(username, password):
-    return User.query.filter(
-        User.username == username.strip(),
-        User.password_hash == hash_password(password)
-    ).first()
+    user = User.query.filter(User.username == username.strip()).first()
+
+    if user and verify_password(password, user.password_hash):
+        return user
+
+    return None
 
 
 def add_user_with_profile(username, email, password, role):

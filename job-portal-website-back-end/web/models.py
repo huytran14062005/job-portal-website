@@ -4,7 +4,7 @@ from web import db, app
 from flask_login import UserMixin
 from enum import Enum as UserEnum
 from datetime import datetime,timedelta,date
-import hashlib
+from web.utils.password_hasher import hash_password
 
 class UserRole(UserEnum):
     UNGVIEN = "ungvien"
@@ -292,7 +292,7 @@ if __name__ == "__main__":
         admin = User(
             username="admin",
             email="admin@jobportal.com",
-            password_hash=hashlib.md5("admin123".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("admin123"),
             role=UserRole.ADMIN
         )
 
@@ -302,28 +302,28 @@ if __name__ == "__main__":
         ungvien1 = User(
             username="nguyenvana",
             email="nguyenvana@gmail.com",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.UNGVIEN
         )
 
         nhatuyendung1 = User(
             username="fpt_hr",
             email="hr@fpt.com.vn",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.NHATUYENDUNG
         )
 
         nhatuyendung2 = User(
             username="vng_hr",
             email="hr@vng.com.vn",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.NHATUYENDUNG
         )
 
         nhatuyendung3 = User(
             username="vingroup_hr",
             email="hr@vingroup.com.vn",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.NHATUYENDUNG
         )
 
@@ -518,14 +518,14 @@ if __name__ == "__main__":
         ungvien2 = User(
             username="tranthib",
             email="tranthib@gmail.com",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.UNGVIEN
         )
 
         ungvien3 = User(
             username="lequangc",
             email="lequangc@gmail.com",
-            password_hash=hashlib.md5("12345".encode("utf-8")).hexdigest(),
+            password_hash=hash_password("12345"),
             role=UserRole.UNGVIEN
         )
 
