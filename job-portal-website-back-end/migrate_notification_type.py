@@ -22,7 +22,7 @@ def migrate():
         """)).scalar()
 
         if current is None:
-            print("✗ Không tìm thấy cột notifications.type - kiểm tra lại database")
+            print("Không tìm thấy cột notifications.type - kiểm tra lại database")
             return
 
         print(f"Hiện tại: {current}")
