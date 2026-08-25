@@ -8,6 +8,7 @@ from flask_mail import Message
 
 from web import dao, mail
 from web.services.exceptions import AppError, NotFoundError, ValidationError
+from web.services.token_service import revoke_user_refresh_sessions
 from web.services.validators import (
     require_otp_code,
     validate_password_confirmation,
@@ -48,6 +49,35 @@ def _send_otp_email(user, otp):
             f"Mã có hiệu lực trong {int(OTP_TTL.total_seconds() // 60)} phút "
             "và chỉ được sử dụng một lần.\n\n"
             "Nếu bạn không yêu cầu đổi mật khẩu, hãy bỏ qua email này."
+        ),
+    )
+    mail.send(message)
+
+
+def send_account_locked_email(user):
+    message = Message(
+        subject="Thông báo tài khoản bị khóa - Job Portal",
+        recipients=[user.email],
+        html=(
+            f"<p>Xin chào {user.username},</p>"
+            "<p>Tài khoản của bạn đã tạm thời bị khóa. "
+            "Bạn sẽ không thể đăng nhập hoặc sử dụng các chức năng của hệ thống.</p>"
+            "<p>Nếu bạn cho rằng đây là nhầm lẫn, vui lòng liên hệ hỗ trợ khách hàng theo số "
+            '<a href="tel:19001234">1900 1234</a>.</p>'
+        ),
+    )
+    mail.send(message)
+
+
+def send_account_unlocked_email(user):
+    message = Message(
+        subject="Thông báo tài khoản đã được mở khóa - Job Portal",
+        recipients=[user.email],
+        html=(
+            f"<p>Xin chào {user.username},</p>"
+            "<p>Sau khi xem xét lại khiếu nại của bạn, chúng tôi đã mở khóa tài khoản của bạn. "
+            "Bạn có thể đăng nhập và tiếp tục sử dụng các chức năng của hệ thống.</p>"
+            "<p>Chúng tôi xin lỗi vì sự bất tiện này.</p>"
         ),
     )
     mail.send(message)
@@ -139,6 +169,7 @@ def reset_password_service(reset_token, new_password, confirm_password=None):
         raise NotFoundError("Tài khoản không tồn tại.")
 
     dao.update_user_password(user, new_password)
+    revoke_user_refresh_sessions(user.id)
 
     
     _password_reset_tokens.pop(reset_token, None)

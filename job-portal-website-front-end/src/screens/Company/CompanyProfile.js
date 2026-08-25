@@ -163,7 +163,7 @@ const CompanyProfile = () => {
 
   
   const renderApprovalBadge = () => {
-    if (profile?.status === CompanyStatus.APPROVED) {
+    if (profile?.status === CompanyStatus.DA_DUYET) {
       return (
         <span className="approval-badge approval-badge-approved">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -185,7 +185,7 @@ const CompanyProfile = () => {
       );
     }
 
-    if (profile?.status === CompanyStatus.REJECT) {
+    if (profile?.status === CompanyStatus.DA_TU_CHOI) {
       return (
         <span className="approval-badge approval-badge-rejected">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
@@ -379,7 +379,7 @@ const CompanyProfile = () => {
               
               <div className="profile-field">
                 <label className="profile-label">
-                  Tên công ty <span className="text-required">*</span>
+                  Tên công ty
                 </label>
                 <div className="profile-value">
                   {isEditing ? (
@@ -406,7 +406,7 @@ const CompanyProfile = () => {
               
               <div className="profile-field">
                 <label className="profile-label">
-                  Email công ty <span className="text-required">*</span>
+                  Email công ty
                 </label>
                 <div className="profile-value">
                   <span className="profile-text">{profile?.email || ""}</span>

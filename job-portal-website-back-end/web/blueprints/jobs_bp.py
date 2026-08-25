@@ -2,7 +2,7 @@ import math
 
 from flask import Blueprint, jsonify, request
 
-from web import app, dao
+from web import app, cache, dao
 from web.blueprints.api_errors import handle_api_errors
 from web.middleware.auth_middleware import verify_role, verify_token
 from web.models import UserRole
@@ -40,6 +40,7 @@ def _paged_jobs_response(filters, jobs, total):
 
 
 @jobs_bp.route('', methods=['GET'])
+@cache.cached(timeout=60, query_string=True)
 @handle_api_errors
 def get_jobs_public():
     filters = _read_job_filters()
@@ -75,6 +76,7 @@ def get_saved_job_statuses():
 
 
 @jobs_bp.route('/<int:job_id>', methods=['GET'])
+@cache.cached(timeout=300)
 @handle_api_errors
 def get_job_detail_view(job_id):
     return jsonify(get_job_detail_service(job_id)), 200
@@ -100,6 +102,7 @@ def check_job_saved_view(job_id):
 
 
 @jobs_bp.route('/<int:job_id>/related', methods=['GET'])
+@cache.cached(timeout=300, query_string=True)
 @handle_api_errors
 def get_related_jobs_view(job_id):
     limit = request.args.get('limit', 5, type=int)

@@ -1,5 +1,3 @@
-import math
-
 from flask import Blueprint, jsonify, request
 
 from web import app, dao
@@ -11,6 +9,7 @@ from web.services.application_service import (
     get_apply_state_service,
     get_reapply_info,
 )
+from web.utils.pagination import build_pagination
 
 applications_bp = Blueprint('applications', __name__, url_prefix='/api')
 
@@ -25,7 +24,11 @@ def my_applications_view():
     applications, total = dao.get_application_of_own_candidate(
         candidate_id=request.user_id, page=page
     )
-    pages = math.ceil(total / app.config["APPLICATION_SIZE"])
+    pagination = build_pagination(
+        page,
+        app.config["APPLICATION_SIZE"],
+        total
+    )
 
     applications_list = []
     for a in applications:
@@ -46,9 +49,9 @@ def my_applications_view():
 
     return jsonify({
         "applications": applications_list,
-        "total": total,
-        "pages": pages,
-        "current_page": page
+        "total": pagination["total"],
+        "pages": pagination["total_pages"],
+        "current_page": pagination["page"]
     }), 200
 
 
@@ -71,7 +74,7 @@ def apply_job_view(job_id):
         "application": {
             "id": application.id,
             "job_post_id": application.job_post_id,
-            "cv_url": application.cv_url,
+            "cv_url": application.cv_file.cv_url,
             "cv_file_id": application.cv_file_id,
             "status": application.status.value,
             "applied_at": application.applied_at.strftime('%d-%m-%Y %H:%M:%S'),

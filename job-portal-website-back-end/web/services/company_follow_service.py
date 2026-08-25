@@ -18,7 +18,7 @@ def toggle_follow_company_service(candidate_id, company_id):
         return {"is_followed": False, "message": "Đã bỏ follow công ty"}
 
     
-    if company.status != CompanyStatus.APPROVED:
+    if company.status != CompanyStatus.DA_DUYET:
         raise ValidationError("Công ty này chưa được duyệt")
 
     company_follow_dao.follow_company(candidate_id, company_id)
@@ -34,24 +34,18 @@ def notify_followers_new_job(company_id, company_name, job_id, job_title):
     ).all()
     
     if not followers:
-        print(f"✓ No followers for company {company_id}, skip notification")
         return
     
-    
-    notification_count = 0
     for follow in followers:
         try:
             content = f'Công ty {company_name} vừa đăng tuyển vị trí mới: "{job_title}". Xem ngay!'
             
             create_and_emit_notification(
                 user_id=follow.candidate_id,
-                notification_type=NotificationType.NEW_JOB,
+                notification_type=NotificationType.CONG_VIEC_MOI,
                 content=content,
                 related_type='job_post',
                 related_id=job_id
             )
-            notification_count += 1
-        except Exception as e:
-            print(f"✗ Error sending notification to candidate {follow.candidate_id}: {e}")
-    
-    print(f"✓ Sent {notification_count} new job notifications to followers of company {company_id}")
+        except Exception:
+            pass

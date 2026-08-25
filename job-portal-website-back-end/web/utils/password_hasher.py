@@ -1,6 +1,4 @@
 import bcrypt
-
-
 BCRYPT_ROUNDS = 12
 
 

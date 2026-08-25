@@ -7,7 +7,7 @@ from .base_dao import apply_pagination
 
 def get_all_users(page=1, per_page=None, role=None, keyword=None):
 
-    query = User.query.filter(User.role != UserRole.ADMIN)
+    query = User.query.filter(User.role != UserRole.QUANTRIVIEN)
 
 
     if role:
@@ -39,7 +39,7 @@ def get_user_detail_by_id(user_id):
         .first()
     )
 
-    if not user or user.role == UserRole.ADMIN:
+    if not user or user.role == UserRole.QUANTRIVIEN:
         return None
 
     result = {
@@ -47,6 +47,7 @@ def get_user_detail_by_id(user_id):
         'username': user.username,
         'role': user.role.value,
         'email': user.email,
+        'is_locked': user.is_locked,
         'created_at': user.created_at.isoformat() if user.created_at else None,
         'phone': None,
         'date_of_birth': None,
@@ -83,13 +84,13 @@ def get_user_detail_by_id(user_id):
     return result
 
 
-def delete_user(user):
+def set_user_locked(user, is_locked):
     try:
 
-        db.session.delete(user)
+        user.is_locked = is_locked
         db.session.commit()
     except Exception as ex:
         db.session.rollback()
-        raise Exception(f'Lỗi xóa user: {str(ex)}')
+        raise Exception(f'Lỗi cập nhật trạng thái tài khoản: {str(ex)}')
 
-    return True
+    return user

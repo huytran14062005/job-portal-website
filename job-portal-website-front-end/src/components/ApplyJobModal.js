@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { authApis, endpoints } from "../configs/Apis";
 import { getApiError } from "../utils/apiError";
+import { formatFileSize } from "../utils/formatters";
+import { removeDiacritics } from "../utils/text";
 import "../css/ApplyJobModal.css";
 
 const ANALYSIS_LABELS = {
@@ -163,6 +166,17 @@ const ApplyJobModal = ({ isOpen, onClose, jobId, jobTitle, companyName, onSucces
     }
   }, [isOpen, jobId]);
 
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
+
   
   useEffect(() => {
     if (!searchQuery.trim()) {
@@ -181,14 +195,6 @@ const ApplyJobModal = ({ isOpen, onClose, jobId, jobTitle, companyName, onSucces
   }, [searchQuery, cvList]); 
 
   
-  const removeDiacritics = (str) => {
-    return str
-      .normalize("NFD") 
-      .replace(/[\u0300-\u036f]/g, "") 
-      .replace(/đ/g, "d") 
-      .replace(/Đ/g, "D"); 
-  };
-
   const checkIfAlreadyApplied = async () => {
     try {
       setCheckingApplied(true);
@@ -311,15 +317,11 @@ const ApplyJobModal = ({ isOpen, onClose, jobId, jobTitle, companyName, onSucces
     }
   };
 
-  const formatFileSize = (bytes) => {
-    if (bytes < 1024) return bytes + " B";
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
-    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
-  };
-
   if (!isOpen) return null;
 
-  return (
+
+
+  return createPortal(
     <div className="modal-overlay" onClick={onClose}>
       <div className="apply-modal" onClick={(e) => e.stopPropagation()}>
         
@@ -445,7 +447,11 @@ const ApplyJobModal = ({ isOpen, onClose, jobId, jobTitle, companyName, onSucces
 
               
               {uploadMode === "existing" && (
-                <div className="cv-selection-section">
+                <div
+                  className={`cv-selection-section${
+                    !loadingCvs && cvList.length === 0 ? " is-empty" : ""
+                  }`}
+                >
                   {loadingCvs ? (
                     <div className="loading-cvs">
                       <div className="spinner-small"></div>
@@ -662,7 +668,8 @@ const ApplyJobModal = ({ isOpen, onClose, jobId, jobTitle, companyName, onSucces
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

@@ -73,6 +73,7 @@ def get_company_detail_by_id(company_id):
         result['user_info'] = {
             'username': user.username,
             'email': user.email,
+            'is_locked': user.is_locked,
             'created_at': user.created_at.isoformat() if user.created_at else None
         }
 
@@ -92,22 +93,11 @@ def update_company(company, changes):
     return True
 
 
-def delete_company(user):
-    try:
-        db.session.delete(user)
-        db.session.commit()
-    except Exception as ex:
-        db.session.rollback()
-        raise Exception(f'Lỗi xóa công ty: {str(ex)}')
-
-    return True
-
-
 def get_pending_companies(page=1, per_page=None):
     query = (
         CompanyInfo.query
         .options(joinedload(CompanyInfo.user))
-        .filter(CompanyInfo.status == CompanyStatus.PENDING)
+        .filter(CompanyInfo.status == CompanyStatus.CHO_DUYET)
         .order_by(CompanyInfo.id.desc())
     )
 
@@ -133,11 +123,11 @@ def set_company_status(company, status, approved_at=None):
 
 
 def approve_company(company):
-    return set_company_status(company, CompanyStatus.APPROVED, approved_at=datetime.now())
+    return set_company_status(company, CompanyStatus.DA_DUYET, approved_at=datetime.now())
 
 
 def reject_company(company):
-    company.status = CompanyStatus.REJECT
+    company.status = CompanyStatus.DA_TU_CHOI
     company.approved_at = None
 
     hidden_count = hide_job_posts_of_company(company.id)

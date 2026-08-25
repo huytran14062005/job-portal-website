@@ -86,11 +86,6 @@
   margin-bottom: 8px;
 }
 
-.form-label.required::after {
-  content: " *";
-  color: #dc2626;
-}
-
 .form-input,
 .form-select,
 .form-textarea {

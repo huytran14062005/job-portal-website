@@ -29,14 +29,10 @@ def get_profile_service(user_id):
 
     if not user:
         raise NotFoundError("User không tồn tại")
-
-    
-    
     
     if user.role != UserRole.UNGVIEN:
         return user, dao.build_applicant_profile(user_id)
 
-    
     return user, dao.ensure_applicant_profile(user_id)
 
 
@@ -62,9 +58,7 @@ def replace_avatar_service(profile, avatar_file):
     return new_avatar_url
 
 
-def update_profile_service(user_id, full_name, gender, date_of_birth, phone, address, description,
-                           profile=None):
-    
+def update_profile_service(user_id, full_name, gender, date_of_birth, phone, address, description, profile=None):
     if profile is None:
         profile = dao.get_applicant_profile(user_id)
 

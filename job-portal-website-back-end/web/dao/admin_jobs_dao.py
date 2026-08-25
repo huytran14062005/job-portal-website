@@ -138,19 +138,6 @@ def get_job_by_id(job_id):
     return JobPost.query.get(job_id)
 
 
-def update_job(job, changes):
-    for field, value in changes.items():
-        setattr(job, field, value)
-
-    try:
-        db.session.commit()
-    except Exception as ex:
-        db.session.rollback()
-        raise Exception(f'Lỗi cập nhật bài đăng: {str(ex)}')
-
-    return True
-
-
 def update_job_status(job, status):
     job.status = status
 
@@ -159,16 +146,5 @@ def update_job_status(job, status):
     except Exception as ex:
         db.session.rollback()
         raise Exception(f'Lỗi cập nhật trạng thái bài đăng: {str(ex)}')
-
-    return True
-
-
-def delete_job(job):
-    try:
-        db.session.delete(job)
-        db.session.commit()
-    except Exception as ex:
-        db.session.rollback()
-        raise Exception(f'Lỗi xóa bài đăng: {str(ex)}')
 
     return True

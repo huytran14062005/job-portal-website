@@ -7,6 +7,11 @@ from web.services.exceptions import (
     PermissionDeniedError,
     ValidationError,
 )
+from web.services.password_reset_service import (
+    send_account_locked_email,
+    send_account_unlocked_email,
+)
+from web.services.token_service import revoke_user_refresh_sessions
 from web.services.validators import parse_page, parse_per_page
 from web.utils.date_parser import parse_and_format_date
 
@@ -32,7 +37,7 @@ def parse_user_role_filter(role_value):
 def _get_manageable_user(user_id):
     user = User.query.get(user_id)
 
-    if not user or user.role == UserRole.ADMIN:
+    if not user or user.role == UserRole.QUANTRIVIEN:
         raise NotFoundError("User không tồn tại")
 
     return user
@@ -61,11 +66,14 @@ def get_user_detail_service(user_id):
     return detail
 
 
-def delete_user_service(user_id, actor_id):
+def set_user_lock_service(user_id, actor_id, is_locked):
+    if not isinstance(is_locked, bool):
+        raise ValidationError("Trạng thái khóa tài khoản không hợp lệ")
+
     actor = User.query.get(actor_id)
 
-    if not actor or actor.role != UserRole.ADMIN:
-        raise PermissionDeniedError("Không có quyền xóa người dùng")
+    if not actor or actor.role != UserRole.QUANTRIVIEN:
+        raise PermissionDeniedError("Không có quyền quản lý tài khoản")
 
     user = User.query.get(user_id)
 
@@ -73,12 +81,21 @@ def delete_user_service(user_id, actor_id):
         raise NotFoundError("User không tồn tại")
 
     if user.id == actor.id:
-        raise PermissionDeniedError("Không thể tự xóa tài khoản của chính mình")
+        raise PermissionDeniedError("Không thể tự khóa tài khoản của chính mình")
 
-    if user.role == UserRole.ADMIN:
-        raise PermissionDeniedError("Không thể xóa tài khoản admin")
+    if user.role == UserRole.QUANTRIVIEN:
+        raise PermissionDeniedError("Không thể khóa tài khoản quản trị viên")
 
-    return dao.delete_user(user)
+    was_locked = user.is_locked
+    updated_user = dao.set_user_locked(user, is_locked)
+
+    if updated_user.is_locked and not was_locked:
+        revoke_user_refresh_sessions(updated_user.id)
+        send_account_locked_email(updated_user)
+    elif not updated_user.is_locked and was_locked:
+        send_account_unlocked_email(updated_user)
+
+    return updated_user
 
 
 def update_user_profile_service(user_id, data):

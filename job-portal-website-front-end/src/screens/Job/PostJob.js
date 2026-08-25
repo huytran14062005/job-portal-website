@@ -35,7 +35,6 @@ const PostJob = () => {
   });
 
   useEffect(() => {
-    
     if (!user || user.role !== "nhatuyendung") {
       toast.error("Bạn không có quyền truy cập trang này!");
       navigate("/");
@@ -51,8 +50,7 @@ const PostJob = () => {
         const status = response.data?.status;
         setCompanyStatus(status);
 
-        
-        if (status === CompanyStatus.REJECT) return;
+        if (status === CompanyStatus.DA_TU_CHOI) return;
 
         await Promise.all([fetchLocations(), fetchJobTypes()]);
       } catch (error) {
@@ -90,7 +88,9 @@ const PostJob = () => {
       setJobTypes(response.data.job_types || []);
     } catch (error) {
       console.error("Error fetching job types:", error);
-      toast.error(getApiError(error, "Không thể tải danh sách loại công việc!"));
+      toast.error(
+        getApiError(error, "Không thể tải danh sách loại công việc!"),
+      );
     }
   };
 
@@ -102,7 +102,6 @@ const PostJob = () => {
     }));
   };
 
-  
   const toBackendDate = (value) => {
     if (!value) return "";
 
@@ -113,9 +112,6 @@ const PostJob = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    
-    
-    
     try {
       setLoading(true);
 
@@ -175,202 +171,195 @@ const PostJob = () => {
         <div className="alert alert-error post-job-company-rejected">
           {companyStatusError}
         </div>
-      ) : companyStatus === CompanyStatus.REJECT ? (
+      ) : companyStatus === CompanyStatus.DA_TU_CHOI ? (
         <div className="alert alert-error post-job-company-rejected">
-          Tài khoản công ty đã bị từ chối nên không thể sử dụng chức năng này. Vui lòng cập nhật lại hồ sơ công ty.
+          Tài khoản công ty đã bị từ chối nên không thể sử dụng chức năng này.
+          Vui lòng cập nhật lại hồ sơ công ty.
         </div>
       ) : (
         <form className="post-job-form" onSubmit={handleSubmit}>
-        
-        <div className="form-group">
-          <label htmlFor="title" className="form-label required">
-            Tiêu đề công việc
-          </label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            className="form-input"
-            placeholder="Ví dụ: Backend Developer (Python/Java)"
-            value={formData.title}
-            onChange={handleChange}
-          />
-        </div>
-
-        
-        <div className="form-row">
           <div className="form-group">
-            <label htmlFor="location_id" className="form-label required">
-              Địa điểm làm việc
-            </label>
-            <select
-              id="location_id"
-              name="location_id"
-              className="form-select"
-              value={formData.location_id}
-              onChange={handleChange}
-            >
-              <option value="">-- Chọn địa điểm --</option>
-              {locations.map((location) => (
-                <option key={location.id} value={location.id}>
-                  {location.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="job_type_id" className="form-label required">
-              Loại công việc
-            </label>
-            <select
-              id="job_type_id"
-              name="job_type_id"
-              className="form-select"
-              value={formData.job_type_id}
-              onChange={handleChange}
-            >
-              <option value="">-- Chọn loại công việc --</option>
-              {jobTypes.map((type) => (
-                <option key={type.id} value={type.id}>
-                  {type.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        
-        <div className="form-row">
-          <div className="form-group">
-            <label htmlFor="min_salary" className="form-label">
-              Mức lương tối thiểu (VNĐ)
+            <label htmlFor="title" className="form-label">
+              Tiêu đề công việc
             </label>
             <input
-              type="number"
-              id="min_salary"
-              name="min_salary"
+              type="text"
+              id="title"
+              name="title"
               className="form-input"
-              placeholder="Ví dụ: 15000000"
-              value={formData.min_salary}
+              placeholder="Ví dụ: Backend Developer (Python/Java)"
+              value={formData.title}
+              onChange={handleChange}
+            />
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="location_id" className="form-label">
+                Địa điểm làm việc
+              </label>
+              <select
+                id="location_id"
+                name="location_id"
+                className="form-select"
+                value={formData.location_id}
+                onChange={handleChange}
+              >
+                <option value=""> Chọn địa điểm </option>
+                {locations.map((location) => (
+                  <option key={location.id} value={location.id}>
+                    {location.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="job_type_id" className="form-label">
+                Loại công việc
+              </label>
+              <select
+                id="job_type_id"
+                name="job_type_id"
+                className="form-select"
+                value={formData.job_type_id}
+                onChange={handleChange}
+              >
+                <option value=""> Chọn loại công việc </option>
+                {jobTypes.map((type) => (
+                  <option key={type.id} value={type.id}>
+                    {type.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="min_salary" className="form-label">
+                Mức lương tối thiểu (VNĐ)
+              </label>
+              <input
+                type="number"
+                id="min_salary"
+                name="min_salary"
+                className="form-input"
+                placeholder="Ví dụ: 15000000"
+                value={formData.min_salary}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="max_salary" className="form-label">
+                Mức lương tối đa (VNĐ)
+              </label>
+              <input
+                type="number"
+                id="max_salary"
+                name="max_salary"
+                className="form-input"
+                placeholder="Ví dụ: 25000000"
+                value={formData.max_salary}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="deadline" className="form-label">
+              Hạn nộp hồ sơ
+            </label>
+            <input
+              type="date"
+              id="deadline"
+              name="deadline"
+              className="form-input"
+              value={formData.deadline}
               onChange={handleChange}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="max_salary" className="form-label">
-              Mức lương tối đa (VNĐ)
+            <label htmlFor="description" className="form-label">
+              Mô tả công việc
             </label>
-            <input
-              type="number"
-              id="max_salary"
-              name="max_salary"
-              className="form-input"
-              placeholder="Ví dụ: 25000000"
-              value={formData.max_salary}
+            <textarea
+              id="description"
+              name="description"
+              className="form-textarea"
+              placeholder="Mô tả chi tiết về công việc, nhiệm vụ, trách nhiệm..."
+              value={formData.description}
               onChange={handleChange}
+              rows={6}
             />
           </div>
-        </div>
 
-        
-        <div className="form-group">
-          <label htmlFor="deadline" className="form-label required">
-            Hạn nộp hồ sơ
-          </label>
-          <input
-            type="date"
-            id="deadline"
-            name="deadline"
-            className="form-input"
-            value={formData.deadline}
-            onChange={handleChange}
-          />
-        </div>
+          <div className="form-group">
+            <label htmlFor="requirements" className="form-label">
+              Yêu cầu ứng viên
+            </label>
+            <textarea
+              id="requirements"
+              name="requirements"
+              className="form-textarea"
+              placeholder="Ví dụ:&#10;- Tốt nghiệp Đại học chuyên ngành CNTT&#10;- 2+ năm kinh nghiệm Python/Java&#10;- Kiến thức về SQL, REST API"
+              value={formData.requirements}
+              onChange={handleChange}
+              rows={6}
+            />
+          </div>
 
-        
-        <div className="form-group">
-          <label htmlFor="description" className="form-label required">
-            Mô tả công việc
-          </label>
-          <textarea
-            id="description"
-            name="description"
-            className="form-textarea"
-            placeholder="Mô tả chi tiết về công việc, nhiệm vụ, trách nhiệm..."
-            value={formData.description}
-            onChange={handleChange}
-            rows={6}
-          />
-        </div>
+          <div className="form-group">
+            <label htmlFor="benefits" className="form-label">
+              Quyền lợi ứng viên
+            </label>
+            <textarea
+              id="benefits"
+              name="benefits"
+              className="form-textarea"
+              placeholder="Ví dụ:&#10;- Lương tháng 13, thưởng theo hiệu suất&#10;- Bảo hiểm đầy đủ&#10;- Môi trường làm việc chuyên nghiệp"
+              value={formData.benefits}
+              onChange={handleChange}
+              rows={6}
+            />
+          </div>
 
-        
-        <div className="form-group">
-          <label htmlFor="requirements" className="form-label">
-            Yêu cầu ứng viên
-          </label>
-          <textarea
-            id="requirements"
-            name="requirements"
-            className="form-textarea"
-            placeholder="Ví dụ:&#10;- Tốt nghiệp Đại học chuyên ngành CNTT&#10;- 2+ năm kinh nghiệm Python/Java&#10;- Kiến thức về SQL, REST API"
-            value={formData.requirements}
-            onChange={handleChange}
-            rows={6}
-          />
-        </div>
-
-        
-        <div className="form-group">
-          <label htmlFor="benefits" className="form-label">
-            Quyền lợi ứng viên
-          </label>
-          <textarea
-            id="benefits"
-            name="benefits"
-            className="form-textarea"
-            placeholder="Ví dụ:&#10;- Lương tháng 13, thưởng theo hiệu suất&#10;- Bảo hiểm đầy đủ&#10;- Môi trường làm việc chuyên nghiệp"
-            value={formData.benefits}
-            onChange={handleChange}
-            rows={6}
-          />
-        </div>
-
-        
-        <div className="form-actions">
-          <button
-            type="button"
-            className="btn btn-cancel"
-            onClick={() => navigate(-1)}
-            disabled={loading}
-          >
-            Hủy
-          </button>
-          <button type="submit" className="btn btn-submit" disabled={loading}>
-            {loading ? (
-              <>
-                <div className="spinner-small"></div>
-                Đang đăng...
-              </>
-            ) : (
-              <>
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                  <polyline points="17 21 17 13 7 13 7 21" />
-                  <polyline points="7 3 7 8 15 8" />
-                </svg>
-                Đăng bài
-              </>
-            )}
-          </button>
-        </div>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn btn-cancel"
+              onClick={() => navigate(-1)}
+              disabled={loading}
+            >
+              Hủy
+            </button>
+            <button type="submit" className="btn btn-submit" disabled={loading}>
+              {loading ? (
+                <>
+                  <div className="spinner-small"></div>
+                  Đang đăng...
+                </>
+              ) : (
+                <>
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                    <polyline points="17 21 17 13 7 13 7 21" />
+                    <polyline points="7 3 7 8 15 8" />
+                  </svg>
+                  Đăng bài
+                </>
+              )}
+            </button>
+          </div>
         </form>
       )}
     </div>

@@ -1,7 +1,9 @@
 import React, { useContext, useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { MyUserContext } from "../configs/Contexts";
-import { authApis, endpoints } from "../configs/Apis";
+import Apis, { authApis, endpoints } from "../configs/Apis";
+import { UserRole } from "../configs/constants";
 import NotificationBell from "./NotificationBell";
 import { useToast } from "./Toast";
 import {
@@ -28,7 +30,7 @@ const Header = () => {
       if (user) {
         try {
           let response;
-          if (user.role === "admin") {
+          if (user.role === UserRole.QUANTRIVIEN) {
             
             setUserProfile({ full_name: user.username });
             return;
@@ -115,8 +117,9 @@ const Header = () => {
     setShowLogoutConfirm(true);
   };
 
-  const handleConfirmLogout = () => {
+  const handleConfirmLogout = async () => {
     setShowLogoutConfirm(false);
+    await Apis.post(endpoints.logout).catch(() => null);
     dispatch({ type: "LOGOUT" });
     setUserProfile(null);
     toast.success("Đăng xuất thành công!");
@@ -169,7 +172,7 @@ const Header = () => {
   };
 
   
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === UserRole.QUANTRIVIEN;
   const avatarSrc = getAvatarByRole(userProfile?.avatar_url, user?.role);
   const onAvatarError =
     user?.role === "nhatuyendung" ? onCompanyLogoError : onApplicantAvatarError;
@@ -199,7 +202,7 @@ const Header = () => {
         <nav className="header-nav">
           <ul className="nav-menu">
             
-            {(!user || user.role !== "admin") && (
+            {(!user || user.role !== UserRole.QUANTRIVIEN) && (
               <>
                 <li className="nav-item">
                   <span
@@ -233,7 +236,7 @@ const Header = () => {
                 </span>
               </li>
             )}
-            {user && user.role === "admin" && (
+            {user && user.role === UserRole.QUANTRIVIEN && (
               <>
                 <li className="nav-item">
                   <span
@@ -389,7 +392,7 @@ const Header = () => {
                     <div className="user-dropdown-divider"></div>
 
                     <div className="user-dropdown-items">
-                      {user.role === "admin" && (
+                      {user.role === UserRole.QUANTRIVIEN && (
                         <button
                           className="user-dropdown-item"
                           onClick={() => handleNavigate("/admin/users")}
@@ -426,7 +429,7 @@ const Header = () => {
                         </button>
                       )}
 
-                      {user.role === "admin" && (
+                      {user.role === UserRole.QUANTRIVIEN && (
                         <button
                           className="user-dropdown-item"
                           onClick={() => handleNavigate("/admin/companies")}
@@ -449,7 +452,7 @@ const Header = () => {
                         </button>
                       )}
 
-                      {user.role === "admin" && (
+                      {user.role === UserRole.QUANTRIVIEN && (
                         <button
                           className="user-dropdown-item"
                           onClick={() => handleNavigate("/admin/jobs")}
@@ -483,7 +486,7 @@ const Header = () => {
                         </button>
                       )}
 
-                      {user.role !== "admin" && (
+                      {user.role !== UserRole.QUANTRIVIEN && (
                         <button
                           className="user-dropdown-item"
                           onClick={() =>
@@ -623,7 +626,7 @@ const Header = () => {
       </header>
 
       
-      {showLogoutConfirm && (
+      {showLogoutConfirm && createPortal(
         <div
           className="logout-confirm-overlay"
           onClick={() => setShowLogoutConfirm(false)}
@@ -662,7 +665,8 @@ const Header = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   );

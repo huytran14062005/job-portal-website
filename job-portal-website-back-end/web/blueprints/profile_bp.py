@@ -1,8 +1,7 @@
 from flask import Blueprint, jsonify, request
-
 from web.blueprints.api_errors import handle_api_errors
 from web.middleware.auth_middleware import verify_role, verify_token
-from web.models import UserRole
+from web.models import Gender, UserRole
 from web.services.applicant_profile_service import (
     get_profile_service,
     replace_avatar_service,
@@ -13,12 +12,14 @@ from web.services.company_profile_service import (
     replace_logo_service,
     update_company_profile_service,
 )
+from web.utils.public_cache import invalidate_public_cache
 
 profile_bp = Blueprint('profile', __name__, url_prefix='/api')
 
 
 @profile_bp.route('/profile/me', methods=['GET'])
 @verify_token
+@verify_role(UserRole.UNGVIEN)
 @handle_api_errors
 def get_profile():
     user, profile = get_profile_service(request.user_id)
@@ -29,7 +30,7 @@ def get_profile():
         "email": user.email,
         "role": user.role.value,
         "full_name": profile.full_name,
-        "gender": profile.gender.value,
+        "gender": profile.gender.value if profile.gender else Gender.KHAC.value,
         "date_of_birth": profile.date_of_birth.strftime("%d-%m-%Y") if profile.date_of_birth else None,
         "phone": profile.phone,
         "address": profile.address,
@@ -48,13 +49,12 @@ def update_profile_view():
 
     _, current_profile = get_profile_service(user_id)
 
-    avatar_url = replace_avatar_service(current_profile, request.files.get('avatar'))
-
+    replace_avatar_service(current_profile, request.files.get('avatar'))
 
     update_profile_service(
         user_id=user_id,
         full_name=data.get('full_name', current_profile.full_name),
-        gender=data.get('gender', current_profile.gender.value),
+        gender=data.get('gender', current_profile.gender.value if current_profile.gender else Gender.KHAC.value),
         date_of_birth=data.get(
             'date_of_birth',
             current_profile.date_of_birth.strftime("%d-%m-%Y") if current_profile.date_of_birth else None
@@ -67,7 +67,6 @@ def update_profile_view():
 
     return jsonify({
         "message": "Cập nhật hồ sơ thành công!",
-        "avatar_url": avatar_url
     }), 200
 
 
@@ -121,8 +120,8 @@ def update_company_profile_view():
         logo_url=logo_url_to_update,
         company_profile=current_profile
     )
+    invalidate_public_cache()
 
     return jsonify({
         "message": "Cập nhật company profile thành công!",
-        "logo_url": current_profile.logo_url
     }), 200

@@ -4,14 +4,14 @@ from .user_dao import (
     hash_password, get_user_by_id, get_user_by_username, get_user_by_email,
     get_user_by_email_insensitive, auth_user, add_user_with_profile, update_user_password
 )
-from .admin_user_dao import get_all_users, get_user_detail_by_id, delete_user
+from .admin_user_dao import get_all_users, get_user_detail_by_id, set_user_locked
 from .admin_company_dao import (
     get_all_companies, get_company_info_by_id, get_company_detail_by_id, update_company,
-    delete_company, get_pending_companies, set_company_status, approve_company, reject_company
+    get_pending_companies, set_company_status, approve_company, reject_company
 )
 from .admin_jobs_dao import (
     get_all_jobs, get_admin_job_detail, get_job_by_id,
-    update_job, update_job_status, delete_job
+    update_job_status
 )
 from .admin_stats_dao import get_company_statistics, get_user_registration_stats
 from .profile_dao import (
@@ -59,16 +59,16 @@ __all__ = [
     'update_user_password',
 
 
-    'get_all_users', 'get_user_detail_by_id', 'delete_user',
+    'get_all_users', 'get_user_detail_by_id', 'set_user_locked',
 
 
     'get_all_companies', 'get_company_info_by_id', 'get_company_detail_by_id', 'update_company',
-    'delete_company', 'get_pending_companies', 'set_company_status',
+    'get_pending_companies', 'set_company_status',
     'approve_company', 'reject_company',
 
 
     'get_all_jobs', 'get_admin_job_detail', 'get_job_by_id',
-    'update_job', 'update_job_status', 'delete_job',
+    'update_job_status',
 
 
     'get_company_statistics', 'get_user_registration_stats',

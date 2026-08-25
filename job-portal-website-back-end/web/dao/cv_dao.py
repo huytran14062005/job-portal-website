@@ -112,9 +112,8 @@ def delete_cv_files(cvs):
             success = delete_cloudinary_image(cv.cv_url, resource_type="raw")
             if not success:
                 failed_cloudinary.append(cv.id)
-        except Exception as e:
+        except Exception:
             failed_cloudinary.append(cv.id)
-            print(f"Không thể xóa file Cloudinary cho CV {cv.id}: {e}")
 
 
     try:

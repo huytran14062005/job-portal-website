@@ -13,8 +13,7 @@ def upload_cv_to_cloudinary(file):
                 unique_filename=True
             )
             return res.get("secure_url")
-        except Exception as ex:
-            print(f"Lỗi upload CV: {str(ex)}")
+        except Exception:
             return None
     return None
 

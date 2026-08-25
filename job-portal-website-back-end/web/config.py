@@ -16,14 +16,15 @@ class Config:
     SQLALCHEMY_DATABASE_URI = f"mysql+pymysql://{DB_USER}:{DB_PASSWORD}@{DB_HOST}/{DB_NAME}?charset=utf8mb4"
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    
+    CACHE_TYPE = os.getenv("CACHE_TYPE", "SimpleCache")
+    CACHE_DEFAULT_TIMEOUT = int(os.getenv("CACHE_DEFAULT_TIMEOUT", 300))
+    CACHE_THRESHOLD = int(os.getenv("CACHE_THRESHOLD", 500))
+    CACHE_KEY_PREFIX = os.getenv("CACHE_KEY_PREFIX", "job_portal:")
+
     SECRET_KEY = os.getenv("SECRET_KEY", "dev")
     APPLICATION_SIZE = 10
 
-    
-    MAX_APPLY_TIMES = 4  
-
-    
+    MAX_APPLY_TIMES = 4
     
     JOB_EXPIRY_SWEEP_INTERVAL_SECONDS = int(os.getenv("JOB_EXPIRY_SWEEP_INTERVAL_SECONDS", 900))
 
@@ -33,7 +34,20 @@ class Config:
     API_SECRET = os.getenv("API_SECRET", "")
 
     
-    JWT_SECRET = os.getenv("JWT_SECRET", "secret")
+    JWT_SECRET = os.getenv("JWT_SECRET", "")
+    JWT_ACCESS_TOKEN_EXPIRES_SECONDS = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRES_SECONDS", 900))
+    JWT_REFRESH_TOKEN_EXPIRES_DAYS = int(os.getenv("JWT_REFRESH_TOKEN_EXPIRES_DAYS", 7))
+    REFRESH_COOKIE_NAME = os.getenv("REFRESH_COOKIE_NAME", "refresh_token")
+    REFRESH_COOKIE_SECURE = os.getenv("REFRESH_COOKIE_SECURE", "false").lower() == "true"
+    REFRESH_COOKIE_SAMESITE = os.getenv("REFRESH_COOKIE_SAMESITE", "Lax")
+    FRONTEND_ORIGINS = [
+        origin.strip()
+        for origin in os.getenv(
+            "FRONTEND_ORIGINS",
+            "http://localhost:3000,http://127.0.0.1:3000",
+        ).split(",")
+        if origin.strip()
+    ]
 
     
     MAIL_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")

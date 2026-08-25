@@ -1,12 +1,11 @@
 from web import db
-from web.models import ApplicantInfo, CompanyInfo, Gender, CompanyStatus
+from web.models import ApplicantInfo, CompanyInfo, CompanyStatus
 
 
 def build_applicant_profile(user_id=None):
     return ApplicantInfo(
         id=user_id,
         full_name='',
-        gender=Gender.KHAC,
         date_of_birth=None,
         phone='',
         address='',
@@ -69,7 +68,7 @@ def build_company_profile(user_id=None):
         website='',
         description='',
         address='',
-        status=CompanyStatus.PENDING,
+        status=CompanyStatus.CHO_DUYET,
     )
 
 

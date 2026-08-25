@@ -143,5 +143,5 @@ def _notify_followers(company_id, job_post):
                 job_id=job_post.id,
                 job_title=job_post.title
             )
-    except Exception as ex:
-        print(f"✗ Error notifying followers: {ex}")
+    except Exception:
+        pass

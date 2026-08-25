@@ -4,6 +4,7 @@ from datetime import datetime
 from flask import request
 
 from web import app, dao
+from web.utils.public_cache import invalidate_public_cache
 
 
 
@@ -39,12 +40,10 @@ def run_expiry_sweep_if_due():
         expired_count = expire_overdue_jobs_service()
 
         if expired_count:
-            print(f"✓ Đã tự động chuyển {expired_count} bài đăng quá hạn sang trạng thái 'hết hạn'")
+            invalidate_public_cache()
 
         return expired_count
-    except Exception as ex:
-        
-        print(f"✗ Lỗi khi quét bài đăng hết hạn: {ex}")
+    except Exception:
         return 0
 
 

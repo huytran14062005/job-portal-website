@@ -1,19 +1,46 @@
-import os
-
-import jwt
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, current_app, jsonify, request
 
 from web.blueprints.api_errors import handle_api_errors
 from web.middleware.auth_middleware import verify_token
-from web.services.auth_service import login_service, parse_register_role, register_service
+from web.services.auth_service import login_service, register_service
 from web.services.firebase_auth_service import generate_firebase_token
 from web.services.password_reset_service import (
     request_password_reset_service,
     reset_password_service,
     verify_password_reset_otp_service,
 )
+from web.services.token_service import (
+    create_access_token,
+    create_refresh_session,
+    revoke_refresh_session,
+    rotate_refresh_session,
+)
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
+
+
+def _set_refresh_cookie(response, token):
+    max_age = current_app.config["JWT_REFRESH_TOKEN_EXPIRES_DAYS"] * 24 * 60 * 60
+    response.set_cookie(
+        key=current_app.config["REFRESH_COOKIE_NAME"],
+        value=token,
+        max_age=max_age,
+        httponly=True,
+        secure=current_app.config["REFRESH_COOKIE_SECURE"],
+        samesite=current_app.config["REFRESH_COOKIE_SAMESITE"],
+        path="/api/auth",
+    )
+    return response
+
+
+def _clear_refresh_cookie(response):
+    response.delete_cookie(
+        key=current_app.config["REFRESH_COOKIE_NAME"],
+        secure=current_app.config["REFRESH_COOKIE_SECURE"],
+        samesite=current_app.config["REFRESH_COOKIE_SAMESITE"],
+        path="/api/auth",
+    )
+    return response
 
 
 @auth_bp.route('/login', methods=['POST'])
@@ -23,27 +50,40 @@ def login_process():
 
     user = login_service(data.get('username', ''), data.get('password', ''))
 
-    token = jwt.encode({
-        'user_id': user.id,
-        'username': user.username,
-        'role': user.role.value
-    }, os.getenv("JWT_SECRET", "secret"), algorithm="HS256")
+    access_token = create_access_token(user)
+    refresh_token = create_refresh_session(user)
 
-    return jsonify({
+    response = jsonify({
         "message": "Đăng nhập thành công",
-        "token": token,
+        "token": access_token,
         "user": {
             "id": user.id,
             "username": user.username,
             "role": user.role.value
         }
-    }), 200
+    })
+
+    return _set_refresh_cookie(response, refresh_token), 200
+
+
+@auth_bp.route('/refresh', methods=['POST'])
+@handle_api_errors
+def refresh_access_token():
+    refresh_token = request.cookies.get(current_app.config["REFRESH_COOKIE_NAME"])
+    user, new_refresh_token = rotate_refresh_session(refresh_token)
+
+    response = jsonify({"token": create_access_token(user)})
+    return _set_refresh_cookie(response, new_refresh_token), 200
 
 
 @auth_bp.route('/logout', methods=['POST'])
-@verify_token
+@handle_api_errors
 def logout_process():
-    return jsonify({"message": "Đăng xuất thành công"}), 200
+    refresh_token = request.cookies.get(current_app.config["REFRESH_COOKIE_NAME"])
+    revoke_refresh_session(refresh_token)
+
+    response = jsonify({"message": "Đăng xuất thành công"})
+    return _clear_refresh_cookie(response), 200
 
 
 @auth_bp.route('/register', methods=['POST'])
@@ -56,7 +96,7 @@ def register_process():
         email=data.get('email', ''),
         password=data.get('password', ''),
         confirm=data.get('confirm', ''),
-        role=parse_register_role(data.get('role', ''))
+        role=data.get('role', '')
     )
 
     return jsonify({"message": "Đăng ký thành công"}), 201

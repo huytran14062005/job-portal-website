@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 
 const ConfirmModal = ({
   isOpen,
@@ -10,6 +11,17 @@ const ConfirmModal = ({
   cancelText = "Hủy",
   icon = "warning",
 }) => {
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const getIcon = () => {
@@ -84,7 +96,7 @@ const ConfirmModal = ({
 
   const iconElement = getIcon();
 
-  return (
+  return createPortal(
     <div className="logout-confirm-overlay" onClick={onClose}>
       <div
         className="logout-confirm-box"
@@ -113,7 +125,8 @@ const ConfirmModal = ({
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 

@@ -2,7 +2,7 @@ from datetime import datetime
 from sqlalchemy.orm import joinedload
 
 from web import db
-from web.models import Application, JobPost, CompanyInfo, ApplicantInfo, ApplicationStatus
+from web.models import Application, CVFile, JobPost, CompanyInfo, ApplicantInfo, ApplicationStatus
 from .base_dao import apply_pagination
 
 
@@ -28,7 +28,7 @@ def get_application_of_own_candidate(candidate_id, page=1):
     query = (db.session.query(
         Application.id,
         Application.job_post_id,
-        Application.cv_url,
+        CVFile.cv_url.label('cv_url'),
         Application.status,
         Application.applied_at,
         JobPost.title,
@@ -38,6 +38,7 @@ def get_application_of_own_candidate(candidate_id, page=1):
         JobPost.status.label('job_status'),
         JobPost.deadline.label('job_deadline')
     )
+             .join(CVFile, Application.cv_file_id == CVFile.id)
              .join(JobPost, Application.job_post_id == JobPost.id)
              .join(CompanyInfo, JobPost.company_id == CompanyInfo.id)
              .filter(Application.candidate_id == candidate_id)
@@ -53,7 +54,8 @@ def get_applications_for_company(company_id, page=1, job_post_id=None, status=No
     query = (db.session.query(Application)
              .options(
                  joinedload(Application.candidate).joinedload(ApplicantInfo.user),
-                 joinedload(Application.job_post).joinedload(JobPost.company)
+                 joinedload(Application.job_post).joinedload(JobPost.company),
+                 joinedload(Application.cv_file)
              )
              .join(JobPost, Application.job_post_id == JobPost.id)
              .join(ApplicantInfo, Application.candidate_id == ApplicantInfo.id)
@@ -77,7 +79,8 @@ def get_application_by_id_for_company(application_id, company_id):
     return (db.session.query(Application)
             .options(
                 joinedload(Application.candidate).joinedload(ApplicantInfo.user),
-                joinedload(Application.job_post).joinedload(JobPost.company)
+                joinedload(Application.job_post).joinedload(JobPost.company),
+                joinedload(Application.cv_file)
             )
             .join(JobPost, Application.job_post_id == JobPost.id)
             .filter(Application.id == application_id)
@@ -110,13 +113,10 @@ def get_application_by_job(candidate_id, job_post_id):
 
 
 def apply_job_with_cv_file(candidate_id, job_post_id, cv_file):
-    cv_file_id = cv_file.id
-
     application = Application(
         candidate_id=candidate_id,
         job_post_id=job_post_id,
-        cv_file_id=cv_file_id,
-        cv_url=cv_file.cv_url,
+        cv_file=cv_file,
         status=ApplicationStatus.DA_NOP,
         applied_at=datetime.now(),
         apply_count=1
@@ -133,8 +133,7 @@ def apply_job_with_cv_file(candidate_id, job_post_id, cv_file):
 
 
 def reapply_job_with_cv_file(application, cv_file):
-    application.cv_file_id = cv_file.id
-    application.cv_url = cv_file.cv_url
+    application.cv_file = cv_file
     application.status = ApplicationStatus.DA_NOP
     application.applied_at = datetime.now()
     application.rejected_at = None

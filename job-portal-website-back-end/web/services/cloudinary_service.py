@@ -27,8 +27,7 @@ def extract_public_id_from_url(cloudinary_url):
         public_id = resource_path.rsplit('.', 1)[0]
         return public_id
         
-    except Exception as e:
-        print(f"✗ Không thể extract public_id từ URL: {e}")
+    except Exception:
         return None
 
 
@@ -40,10 +39,8 @@ def delete_cloudinary_image(cloudinary_url, resource_type="image"):
         public_id = extract_public_id_from_url(cloudinary_url)
         if public_id:
             cloudinary.uploader.destroy(public_id, resource_type=resource_type)
-            print(f"✓ Đã xóa {resource_type} trên Cloudinary: {public_id}")
             return True
-    except Exception as e:
-        print(f"✗ Không thể xóa {resource_type} trên Cloudinary: {e}")
+    except Exception:
         return False
     
     return True
@@ -60,13 +57,8 @@ def upload_cloudinary_image(file, folder=None):
         
         res = cloudinary.uploader.upload(file, **upload_options)
         secure_url = res.get("secure_url")
-        
-        if secure_url:
-            print(f"✓ Upload thành công: {secure_url}")
-        
         return secure_url
-    except Exception as e:
-        print(f"✗ Upload thất bại: {e}")
+    except Exception:
         return None
 
 

@@ -2,7 +2,7 @@ from datetime import date
 
 from sqlalchemy import and_, func, or_
 from web import db, app
-from web.models import (JobPost, CompanyInfo, CompanyStatus, JobLocation, JobType, SavedJob,
+from web.models import (JobPost, CompanyInfo, CompanyStatus, JobLocation, JobType, SavedJob, User,
                         PostStatus, JobReview)
 from .base_dao import apply_pagination
 
@@ -22,7 +22,10 @@ def open_job_posts_condition():
 
 
 def approved_company_condition():
-    return CompanyInfo.status == CompanyStatus.APPROVED
+    return and_(
+        CompanyInfo.status == CompanyStatus.DA_DUYET,
+        CompanyInfo.user.has(User.is_locked.is_(False))
+    )
 
 
 def public_job_posts_condition():
@@ -59,45 +62,41 @@ def expire_overdue_job_posts():
         raise Exception(f'Lỗi khi cập nhật bài đăng hết hạn: {str(ex)}')
 
 
-def get_jobs(user_id=None, page=1, limit=None, keyword=None, location_id=None, job_type_id=None, 
+def _public_jobs_query():
+    return (
+        db.session.query(
+            JobPost.id,
+            JobPost.title,
+            JobPost.min_salary,
+            JobPost.max_salary,
+            JobPost.deadline,
+            CompanyInfo.company_name,
+            func.coalesce(func.avg(JobReview.rating), 0).label('avg_rating'),
+            func.count(JobReview.id).label('review_count')
+        )
+        .join(CompanyInfo, JobPost.company_id == CompanyInfo.id)
+        .outerjoin(JobReview, JobPost.id == JobReview.job_post_id)
+        .filter(public_job_posts_condition())
+        .group_by(JobPost.id, CompanyInfo.company_name)
+    )
+
+
+def get_jobs(user_id=None, page=1, limit=None, keyword=None, location_id=None, job_type_id=None,
              min_salary_filter=None, max_salary_filter=None, is_saved=False):
     if limit is None:
         limit = app.config.get("APPLICATION_SIZE", 10)
 
+    saved_jobs_only = bool(is_saved and user_id)
+    query = _public_jobs_query()
 
-    if is_saved and user_id:
-        query = (db.session.query(
-            JobPost.id,
-            JobPost.title,
-            JobPost.min_salary,
-            JobPost.max_salary,
-            JobPost.deadline,
-            CompanyInfo.company_name,
-            SavedJob.saved_at,
-            func.coalesce(func.avg(JobReview.rating), 0).label('avg_rating'),
-            func.count(JobReview.id).label('review_count')
+    if saved_jobs_only:
+        query = (
+            query
+            .add_columns(SavedJob.saved_at)
+            .join(SavedJob, JobPost.id == SavedJob.job_post_id)
+            .filter(SavedJob.candidate_id == user_id)
+            .group_by(SavedJob.saved_at)
         )
-                 .join(SavedJob, JobPost.id == SavedJob.job_post_id)
-                 .join(CompanyInfo, JobPost.company_id == CompanyInfo.id)
-                 .outerjoin(JobReview, JobPost.id == JobReview.job_post_id)
-                 .filter(SavedJob.candidate_id == user_id)
-                 .filter(public_job_posts_condition())
-                 .group_by(JobPost.id, CompanyInfo.company_name, SavedJob.saved_at))
-    else:
-        query = (db.session.query(
-            JobPost.id,
-            JobPost.title,
-            JobPost.min_salary,
-            JobPost.max_salary,
-            JobPost.deadline,
-            CompanyInfo.company_name,
-            func.coalesce(func.avg(JobReview.rating), 0).label('avg_rating'),
-            func.count(JobReview.id).label('review_count')
-        )
-                 .join(CompanyInfo, JobPost.company_id == CompanyInfo.id)
-                 .outerjoin(JobReview, JobPost.id == JobReview.job_post_id)
-                 .filter(public_job_posts_condition())
-                 .group_by(JobPost.id, CompanyInfo.company_name))
 
 
     if keyword:
@@ -126,7 +125,7 @@ def get_jobs(user_id=None, page=1, limit=None, keyword=None, location_id=None, j
         query = query.filter(JobPost.max_salary <= max_salary_filter)
 
 
-    if is_saved and user_id:
+    if saved_jobs_only:
         query = query.order_by(SavedJob.saved_at.desc())
     else:
 
@@ -151,7 +150,7 @@ def get_jobs(user_id=None, page=1, limit=None, keyword=None, location_id=None, j
             'review_count': job.review_count
         }
 
-        if is_saved and user_id:
+        if saved_jobs_only:
             job_dict['saved_at'] = job.saved_at.strftime('%d-%m-%Y %H:%M:%S')
             job_dict['is_saved'] = True
 
@@ -375,10 +374,6 @@ def get_jobs_by_company(company_id, page=1):
 
 
 def get_related_jobs(job_id, limit=5):
-    print(f"\n=== DEBUG get_related_jobs ===")
-    print(f"Looking for related jobs for job_id: {job_id}")
-    
-
     current_job = (db.session.query(
         JobPost.company_id,
         CompanyInfo.industry
@@ -389,13 +384,10 @@ def get_related_jobs(job_id, limit=5):
                    .first())
 
     if not current_job:
-        print(f"ERROR: Job {job_id} not found!")
         return []
 
     company_id = current_job.company_id
     industry = current_job.industry
-    print(f"Current job - Company ID: {company_id}, Industry: {industry}")
-
 
     query = (db.session.query(
         JobPost.id,
@@ -416,12 +408,9 @@ def get_related_jobs(job_id, limit=5):
              .limit(limit))
 
     jobs = query.all()
-    print(f"Found {len(jobs)} related jobs")
-
 
     jobs_list = []
     for job in jobs:
-        print(f"  - Job {job.id}: {job.title}")
         jobs_list.append({
             'id': job.id,
             'title': job.title,
@@ -432,5 +421,4 @@ def get_related_jobs(job_id, limit=5):
             'location_name': job.location_name
         })
 
-    print(f"=== END DEBUG ===\n")
     return jobs_list

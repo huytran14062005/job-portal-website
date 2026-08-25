@@ -1,9 +1,9 @@
 from web import app, db
 from web.models import (
     User, UserRole, ApplicantInfo, CompanyInfo,
-    JobLocation, JobType, JobPost, Application,
+    JobLocation, JobType, JobPost, Application, CVFile,
     Gender, ApplicationStatus, PostStatus, CompanyStatus,
-    Notification, NotificationType
+    Notification, NotificationType, RefreshSession
 )
 from datetime import datetime, timedelta, date
 from web.utils.password_hasher import hash_password
@@ -71,7 +71,7 @@ if __name__ == "__main__":
             username="admin",
             email="admin@jobportal.com",
             password_hash=hash_password("admin123"),
-            role=UserRole.ADMIN
+            role=UserRole.QUANTRIVIEN
         )
         db.session.add(admin_user)
         db.session.commit()
@@ -178,7 +178,7 @@ if __name__ == "__main__":
             website="https://www.fpt-software.com",
             address="Lô 22, Đường số 2, KCX Tân Thuận, Q.7, TP.HCM",
             description="FPT Software là công ty phần mềm hàng đầu Việt Nam, cung cấp dịch vụ chuyển đổi số toàn diện",
-            status=CompanyStatus.APPROVED,
+            status=CompanyStatus.DA_DUYET,
             approved_at=datetime.now()
         )
         
@@ -190,7 +190,7 @@ if __name__ == "__main__":
             website="https://www.viettel.com.vn",
             address="Số 1 Giang Văn Minh, Ba Đình, Hà Nội",
             description="Tập đoàn Công nghiệp - Viễn thông Quân đội, doanh nghiệp viễn thông lớn nhất Việt Nam",
-            status=CompanyStatus.APPROVED,
+            status=CompanyStatus.DA_DUYET,
             approved_at=datetime.now()
         )
         
@@ -202,7 +202,7 @@ if __name__ == "__main__":
             website="https://www.vnpt.vn",
             address="57 Huỳnh Thúc Kháng, Đống Đa, Hà Nội",
             description="VNPT Technology - Công ty công nghệ thông tin hàng đầu về chuyển đổi số",
-            status=CompanyStatus.APPROVED,
+            status=CompanyStatus.DA_DUYET,
             approved_at=datetime.now()
         )
         
@@ -214,7 +214,7 @@ if __name__ == "__main__":
             website="https://www.momo.vn",
             address="Lầu 4, Toà nhà Flemington, 182 Lê Đại Hành, Q.11, TP.HCM",
             description="Ví điện tử MoMo - Nền tảng thanh toán và dịch vụ tài chính hàng đầu Việt Nam",
-            status=CompanyStatus.APPROVED,
+            status=CompanyStatus.DA_DUYET,
             approved_at=datetime.now()
         )
         
@@ -226,7 +226,7 @@ if __name__ == "__main__":
             website="https://www.tiki.vn",
             address="52 Út Tịch, Phường 4, Quận Tân Bình, TP.HCM",
             description="Tiki - Sàn thương mại điện tử hàng đầu Việt Nam",
-            status=CompanyStatus.APPROVED,
+            status=CompanyStatus.DA_DUYET,
             approved_at=datetime.now()
         )
         
@@ -238,7 +238,7 @@ if __name__ == "__main__":
             website="https://www.shopee.vn",
             address="Tòa nhà Viettel, 285 Cách Mạng Tháng 8, Q.10, TP.HCM",
             description="Shopee - Nền tảng thương mại điện tử và công nghệ số hàng đầu khu vực",
-            status=CompanyStatus.APPROVED,
+            status=CompanyStatus.DA_DUYET,
             approved_at=datetime.now()
         )
         
@@ -250,7 +250,7 @@ if __name__ == "__main__":
             website="https://www.grab.com",
             address="Tầng 8-9, Toà nhà Sài Gòn Centre, 65 Lê Lợi, Q.1, TP.HCM",
             description="Grab - Nền tảng siêu ứng dụng hàng đầu Đông Nam Á",
-            status=CompanyStatus.APPROVED,
+            status=CompanyStatus.DA_DUYET,
             approved_at=datetime.now()
         )
         
@@ -262,7 +262,7 @@ if __name__ == "__main__":
             website="https://www.be.com.vn",
             address="74 Nguyễn Thị Minh Khai, Q.3, TP.HCM",
             description="be - Nền tảng công nghệ kết nối vận tải đa phương tiện của Việt Nam",
-            status=CompanyStatus.APPROVED,
+            status=CompanyStatus.DA_DUYET,
             approved_at=datetime.now()
         )
         
@@ -274,7 +274,7 @@ if __name__ == "__main__":
             website="https://www.vingroup.net",
             address="Tòa Landmark 81, 720A Điện Biên Phủ, Q.Bình Thạnh, TP.HCM",
             description="VinSmart - Công ty công nghệ của Tập đoàn Vingroup",
-            status=CompanyStatus.APPROVED,
+            status=CompanyStatus.DA_DUYET,
             approved_at=datetime.now()
         )
         
@@ -286,7 +286,7 @@ if __name__ == "__main__":
             website="https://www.tpbank.com.vn",
             address="Tầng 6, Toà nhà TPBank, 57 Lý Thường Kiệt, Hoàn Kiếm, Hà Nội",
             description="TPBank - Ngân hàng số hàng đầu Việt Nam",
-            status=CompanyStatus.APPROVED,
+            status=CompanyStatus.DA_DUYET,
             approved_at=datetime.now()
         )
         
@@ -892,10 +892,56 @@ if __name__ == "__main__":
                            applicant7, applicant8, applicant9, applicant10, applicant11])
         db.session.commit()
 
+        cv1 = CVFile(
+            candidate_id=applicant1.id,
+            name="CV Nguyen Van A",
+            cv_url="https://res.cloudinary.com/demo/raw/upload/sample_cv_nguyenvana.pdf",
+            file_name="sample_cv_nguyenvana.pdf"
+        )
+        cv2 = CVFile(
+            candidate_id=applicant2.id,
+            name="CV Tran Thi B",
+            cv_url="https://res.cloudinary.com/demo/raw/upload/sample_cv_tranthib.pdf",
+            file_name="sample_cv_tranthib.pdf"
+        )
+        cv3 = CVFile(
+            candidate_id=applicant2.id,
+            name="CV Tran Thi B Backend",
+            cv_url="https://res.cloudinary.com/demo/raw/upload/sample_cv_tranthib_backend.pdf",
+            file_name="sample_cv_tranthib_backend.pdf"
+        )
+        cv4 = CVFile(
+            candidate_id=applicant3.id,
+            name="CV Le Quang C",
+            cv_url="https://res.cloudinary.com/demo/raw/upload/sample_cv_lequangc.pdf",
+            file_name="sample_cv_lequangc.pdf"
+        )
+        cv5 = CVFile(
+            candidate_id=applicant4.id,
+            name="CV Pham Thi D",
+            cv_url="https://res.cloudinary.com/demo/raw/upload/sample_cv_phamthid.pdf",
+            file_name="sample_cv_phamthid.pdf"
+        )
+        cv6 = CVFile(
+            candidate_id=applicant4.id,
+            name="CV Pham Thi D Frontend",
+            cv_url="https://res.cloudinary.com/demo/raw/upload/sample_cv_phamthid_frontend.pdf",
+            file_name="sample_cv_phamthid_frontend.pdf"
+        )
+        cv7 = CVFile(
+            candidate_id=applicant1.id,
+            name="CV Nguyen Van A Frontend",
+            cv_url="https://res.cloudinary.com/demo/raw/upload/sample_cv_nguyenvana_frontend.pdf",
+            file_name="sample_cv_nguyenvana_frontend.pdf"
+        )
+
+        db.session.add_all([cv1, cv2, cv3, cv4, cv5, cv6, cv7])
+        db.session.commit()
+
         app1 = Application(
             candidate_id=applicant1.id,
             job_post_id=job1.id,
-            cv_url="https://res.cloudinary.com/demo/raw/upload/sample_cv_nguyenvana.pdf",
+            cv_file_id=cv1.id,
             status=ApplicationStatus.DA_NOP,
             applied_at=datetime.now() - timedelta(days=5)
         )
@@ -903,7 +949,7 @@ if __name__ == "__main__":
         app2 = Application(
             candidate_id=applicant2.id,
             job_post_id=job2.id,
-            cv_url="https://res.cloudinary.com/demo/raw/upload/sample_cv_tranthib.pdf",
+            cv_file_id=cv2.id,
             status=ApplicationStatus.DA_DUYET,
             applied_at=datetime.now() - timedelta(days=10)
         )
@@ -911,7 +957,7 @@ if __name__ == "__main__":
         app3 = Application(
             candidate_id=applicant2.id,
             job_post_id=job1.id,
-            cv_url="https://res.cloudinary.com/demo/raw/upload/sample_cv_tranthib_backend.pdf",
+            cv_file_id=cv3.id,
             status=ApplicationStatus.TU_CHOI,
             applied_at=datetime.now() - timedelta(days=8)
         )
@@ -919,7 +965,7 @@ if __name__ == "__main__":
         app4 = Application(
             candidate_id=applicant3.id,
             job_post_id=job1.id,
-            cv_url="https://res.cloudinary.com/demo/raw/upload/sample_cv_lequangc.pdf",
+            cv_file_id=cv4.id,
             status=ApplicationStatus.DA_NOP,
             applied_at=datetime.now() - timedelta(days=3)
         )
@@ -927,7 +973,7 @@ if __name__ == "__main__":
         app5 = Application(
             candidate_id=applicant4.id,
             job_post_id=job1.id,
-            cv_url="https://res.cloudinary.com/demo/raw/upload/sample_cv_phamthid.pdf",
+            cv_file_id=cv5.id,
             status=ApplicationStatus.DA_DUYET,
             applied_at=datetime.now() - timedelta(days=7)
         )
@@ -935,7 +981,7 @@ if __name__ == "__main__":
         app6 = Application(
             candidate_id=applicant4.id,
             job_post_id=job2.id,
-            cv_url="https://res.cloudinary.com/demo/raw/upload/sample_cv_phamthid_frontend.pdf",
+            cv_file_id=cv6.id,
             status=ApplicationStatus.DA_NOP,
             applied_at=datetime.now() - timedelta(days=2)
         )
@@ -943,7 +989,7 @@ if __name__ == "__main__":
         app7 = Application(
             candidate_id=applicant1.id,
             job_post_id=job2.id,
-            cv_url="https://res.cloudinary.com/demo/raw/upload/sample_cv_nguyenvana_frontend.pdf",
+            cv_file_id=cv7.id,
             status=ApplicationStatus.TU_CHOI,
             applied_at=datetime.now() - timedelta(days=12)
         )
@@ -953,7 +999,7 @@ if __name__ == "__main__":
         
         notif1 = Notification(
             user_id=ungvien1.id,
-            type=NotificationType.APPLICATION_STATUS,
+            type=NotificationType.TRANG_THAI_DON,
             content='Đơn ứng tuyển của bạn cho vị trí "Backend Developer (Python/Java)" tại FPT Software đã được duyệt. Nhà tuyển dụng sẽ liên hệ với bạn trong thời gian sớm nhất.',
             related_type='application',
             related_id=app1.id,
@@ -964,7 +1010,7 @@ if __name__ == "__main__":
         
         notif2 = Notification(
             user_id=ungvien1.id,
-            type=NotificationType.NEW_APPLICATION,
+            type=NotificationType.DON_UNG_TUYEN_MOI,
             content='Công việc mới phù hợp với bạn: "Senior Backend Engineer (Go/Node.js)" tại M_Service (MoMo) với mức lương 25-40 triệu VNĐ. Khám phá ngay!',
             related_type='job_post',
             related_id=job6.id,

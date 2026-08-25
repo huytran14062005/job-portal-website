@@ -1,5 +1,9 @@
+import os
+
+import requests
+
 from web import dao
-from web.services.exceptions import NotFoundError, ValidationError
+from web.services.exceptions import AppError, NotFoundError, ValidationError
 from web.services.validators import (
     Limits,
     require_id_list,
@@ -46,6 +50,22 @@ def upload_cv_service(candidate_id, cv_file, name=None):
 
 def get_cv_list_service(candidate_id, page=1, search=None):
     return dao.get_cv_files(candidate_id, page, search)
+
+
+def download_cv_service(cv_file):
+    try:
+        response = requests.get(cv_file.cv_url, timeout=30)
+        response.raise_for_status()
+    except requests.RequestException as ex:
+        raise AppError("Không thể tải file CV", status_code=502) from ex
+
+    display_name = (cv_file.name or cv_file.file_name or f"cv_{cv_file.id}").strip()
+    extension = os.path.splitext(cv_file.file_name or "")[1]
+
+    if extension and not display_name.lower().endswith(extension.lower()):
+        display_name = f"{display_name}{extension}"
+
+    return response.content, response.headers.get("Content-Type"), display_name
 
 
 def update_cv_name_service(cv_id, candidate_id, new_name):

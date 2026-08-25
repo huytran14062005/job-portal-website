@@ -62,8 +62,6 @@ EMAIL_PATTERN = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
 
 
 
-
-
 def require_text(value, label, max_length=None):
     text = '' if value is None else str(value).strip()
 
@@ -97,10 +95,6 @@ def validate_required_fields(**fields):
             raise ValidationError(f"{field_name} không được để trống!")
 
     return True
-
-
-
-
 
 
 def require_int(value, label):
@@ -390,9 +384,6 @@ def validate_image_upload(file, label):
     validate_file_size(file, Limits.IMAGE_MAX_SIZE_BYTES, label)
 
     return file
-
-
-
 
 
 

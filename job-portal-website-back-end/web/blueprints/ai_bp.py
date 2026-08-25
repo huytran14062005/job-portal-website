@@ -22,8 +22,6 @@ def cv_match():
     try:
         result = match_cv_to_job(job_id, cv_id, request.user_id)
     except RuntimeError as ex:
-
-        print(f"[AI CV match runtime error] {ex}")
         return jsonify({"error": str(ex)}), 502
 
     return jsonify({"match": result, "job_id": job_id, "cv_id": cv_id}), 200

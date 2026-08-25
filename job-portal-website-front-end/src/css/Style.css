@@ -968,6 +968,7 @@ body,
 
 .hero-content {
   max-width: 620px;
+  transition: opacity 0.12s linear;
 }
 
 .hero-title {
@@ -2129,21 +2130,29 @@ select.form-control::-ms-expand {
 
 .company-detail-item {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
 }
 
-.detail-label {
+.company-detail-item .detail-label {
   font-size: 13px;
   color: #6b7280;
   font-weight: 500;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
-.detail-value {
+.company-detail-item .detail-value {
   font-size: 14px;
   color: #1f2937;
   font-weight: 600;
   line-height: 1.5;
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: right;
+  word-break: break-word;
 }
 
 .btn-view-company {
@@ -2909,32 +2918,7 @@ select.form-control::-ms-expand {
 }
 
 .saved-jobs-header {
-  margin-bottom: 32px;
-}
-
-.saved-jobs-title {
-  font-size: 32px;
-  font-weight: 800;
-  color: #1e40af;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.saved-jobs-title svg {
-  color: #1e40af;
-}
-
-.saved-jobs-count {
-  font-size: 16px;
-  color: #6b7280;
-  margin: 0;
-}
-
-.saved-jobs-count strong {
-  color: #1e40af;
-  font-weight: 700;
+  margin-bottom: 0;
 }
 
 .saved-jobs-grid {
@@ -3507,10 +3491,6 @@ select.form-control::-ms-expand {
   margin: 0 0 8px 0;
 }
 
-.required {
-  color: #ef4444;
-}
-
 .form-input,
 .form-textarea {
   flex: 1;
@@ -4013,11 +3993,6 @@ select.form-control::-ms-expand {
 
 .btn-edit-profile svg {
   flex-shrink: 0;
-}
-
-.text-required {
-  color: #ef4444;
-  margin-left: 2px;
 }
 
 .profile-text-multiline {

@@ -280,24 +280,32 @@
 }
 
 .btn-upload-empty {
-  padding: 14px 28px;
+  padding: 9px 18px;
   background: linear-gradient(135deg, #10b981 0%, #059669 100%);
   color: white;
   border: none;
-  border-radius: 10px;
-  font-size: 15px;
+  border-radius: 8px;
+  font-size: 14px;
   font-weight: 600;
+  line-height: 1;
   cursor: pointer;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
+  gap: 8px;
+  white-space: nowrap;
   transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+}
+
+.btn-upload-empty svg {
+  display: block;
+  flex-shrink: 0;
 }
 
 .btn-upload-empty:hover {
-  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
-  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+  transform: translateY(-1px);
 }
 
 .cv-grid {
@@ -390,11 +398,14 @@
   gap: 8px;
 }
 
-.btn-save-edit,
-.btn-cancel-edit {
-  flex: 1;
-  padding: 8px;
-  border: none;
+.cv-edit-actions .btn-save-edit,
+.cv-edit-actions .btn-cancel-edit {
+  flex: 1 1 0;
+  min-width: 0;
+  width: auto;
+  height: 38px;
+  padding: 0;
+  border: 2px solid transparent;
   border-radius: 6px;
   cursor: pointer;
   display: flex;
@@ -403,22 +414,24 @@
   transition: all 0.2s;
 }
 
-.btn-save-edit {
+.cv-edit-actions .btn-save-edit {
   background-color: #10b981;
   color: white;
 }
 
-.btn-save-edit:hover {
+.cv-edit-actions .btn-save-edit:hover {
   background-color: #059669;
 }
 
-.btn-cancel-edit {
+.cv-edit-actions .btn-cancel-edit {
   background-color: #f3f4f6;
+  border-color: #e5e7eb;
   color: #6b7280;
 }
 
-.btn-cancel-edit:hover {
+.cv-edit-actions .btn-cancel-edit:hover {
   background-color: #e5e7eb;
+  border-color: #d1d5db;
 }
 
 .cv-card-actions {
@@ -481,6 +494,15 @@
   z-index: 1000;
   animation: fadeIn 0.2s ease-out;
   backdrop-filter: blur(4px);
+}
+
+.cv-preview-overlay {
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  z-index: 9999;
+  padding: 20px;
+  overscroll-behavior: contain;
 }
 
 @keyframes fadeIn {
@@ -573,6 +595,31 @@
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.cv-preview-download-button {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #fff;
+  color: #2563eb;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.cv-preview-download-button:hover:not(:disabled) {
+  border-color: #93c5fd;
+  background: #eff6ff;
+}
+
+.cv-preview-download-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
 }
 
 .cv-preview-open-link {

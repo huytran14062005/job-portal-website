@@ -2,6 +2,8 @@
 .chat-modal-overlay {
   position: fixed;
   inset: 0;
+  width: 100vw;
+  height: 100dvh;
   background: rgba(17, 24, 39, 0.55);
   backdrop-filter: blur(3px);
   display: flex;
@@ -10,6 +12,7 @@
   z-index: 10000;
   padding: 20px;
   animation: chat-fade-in 0.18s ease-out;
+  overscroll-behavior: contain;
 }
 
 @keyframes chat-fade-in {
@@ -129,6 +132,7 @@
 .chat-messages {
   flex: 1;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 20px 20px 8px;
   background: #f8fafc;
 }

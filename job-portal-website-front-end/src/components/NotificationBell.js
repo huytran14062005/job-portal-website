@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { authApis, endpoints } from "../configs/Apis";
 import { MyUserContext } from "../configs/Contexts";
+import { formatDate } from "../utils/formatters";
 import "../css/NotificationBell.css";
 
 const NOTIFICATIONS_PER_PAGE = 3;
@@ -218,11 +219,7 @@ const NotificationBell = () => {
     if (diffHours < 24) return `${diffHours} giờ trước`;
     if (diffDays < 7) return `${diffDays} ngày trước`;
 
-    return date.toLocaleDateString("vi-VN", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+    return formatDate(dateString, { twoDigit: true });
   };
 
   

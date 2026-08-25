@@ -2,21 +2,23 @@ import math
 
 from flask import Blueprint, jsonify, request
 
+from web import cache
 from web.blueprints.api_errors import handle_api_errors
 from web.middleware.auth_middleware import verify_role, verify_token
 from web.models import UserRole
 from web.services.job_review_service import (
     create_review_service,
     delete_review_service,
-    get_rating_summary_service,
     get_reviews_service,
     update_review_service,
 )
+from web.utils.public_cache import invalidate_public_cache
 
 job_reviews_bp = Blueprint('job_reviews', __name__, url_prefix='/api/jobs')
 
 
 @job_reviews_bp.route('/<int:job_id>/reviews', methods=['GET'])
+@cache.cached(timeout=60, query_string=True)
 @handle_api_errors
 def get_job_reviews(job_id):
     page = int(request.args.get('page', 1))
@@ -50,6 +52,7 @@ def create_job_review(job_id):
         rating=data.get('rating'),
         comment=data.get('comment')
     )
+    invalidate_public_cache()
 
     return jsonify({
         "message": "Đánh giá thành công!",
@@ -76,6 +79,7 @@ def update_job_review(job_id, review_id):
         rating=data.get('rating'),
         comment=data.get('comment')
     )
+    invalidate_public_cache()
 
     return jsonify({
         "message": "Cập nhật đánh giá thành công!",
@@ -94,11 +98,6 @@ def update_job_review(job_id, review_id):
 @handle_api_errors
 def delete_job_review(job_id, review_id):
     delete_review_service(review_id=review_id, candidate_id=request.user_id)
+    invalidate_public_cache()
 
     return jsonify({"message": "Xóa đánh giá thành công!"}), 200
-
-
-@job_reviews_bp.route('/<int:job_id>/rating-summary', methods=['GET'])
-@handle_api_errors
-def get_job_rating_summary(job_id):
-    return jsonify(get_rating_summary_service(job_id)), 200

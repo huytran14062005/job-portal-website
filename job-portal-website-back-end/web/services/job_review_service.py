@@ -14,7 +14,7 @@ def _get_reviewable_job(job_post_id, action_label):
     if job.status != PostStatus.HOAT_DONG:
         raise ValidationError(f"Không thể {action_label} cho công việc đã đóng hoặc bị ẩn")
 
-    if not job.company or job.company.status != CompanyStatus.APPROVED:
+    if not job.company or job.company.status != CompanyStatus.DA_DUYET:
         raise ValidationError(f"Không thể {action_label} cho công việc đã đóng hoặc bị ẩn")
 
     if dao.is_job_expired(job.deadline, job.status):
@@ -89,7 +89,3 @@ def delete_review_service(review_id, candidate_id):
 
 def get_reviews_service(job_post_id, page=1, limit=10):
     return job_review_dao.get_reviews_by_job(job_post_id=job_post_id, page=page, limit=limit)
-
-
-def get_rating_summary_service(job_post_id):
-    return job_review_dao.get_job_rating_summary(job_post_id)

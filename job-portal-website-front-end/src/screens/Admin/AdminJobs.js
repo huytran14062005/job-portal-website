@@ -1,11 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import Apis, { authApis, endpoints } from "../../configs/Apis";
+import { createPortal } from "react-dom";
+import { authApis, endpoints } from "../../configs/Apis";
 import { useToast } from "../../components/Toast";
 import Pagination from "../../components/Pagination";
 import { PostStatus } from "../../configs/constants";
 import "../../css/AdminUsers.css";
 import "../../css/AdminCompanies.css";
 import { getApiError } from "../../utils/apiError";
+import { formatDate, formatSalary } from "../../utils/formatters";
 
 const STATUS_OPTIONS = [
   { value: "", label: "Tất cả trạng thái" },
@@ -43,21 +45,12 @@ const AdminJobs = () => {
   const changeStatusDropdownRef = useRef(null);
 
   
-  const [locations, setLocations] = useState([]);
-  const [jobTypes, setJobTypes] = useState([]);
-
-  
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detail, setDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
-  const [editMode, setEditMode] = useState(false);
-  const [form, setForm] = useState({});
-  const [saving, setSaving] = useState(false);
 
   
   const [processing, setProcessing] = useState(false);
-  const [jobToDelete, setJobToDelete] = useState(null);
-  const [deleting, setDeleting] = useState(false);
 
   const fetchJobs = useCallback(async () => {
     try {
@@ -89,23 +82,6 @@ const AdminJobs = () => {
   }, [fetchJobs]);
 
   
-  useEffect(() => {
-    const loadOptions = async () => {
-      try {
-        const [locRes, typeRes] = await Promise.all([
-          Apis.get(endpoints.locations),
-          Apis.get(endpoints["job-types"]),
-        ]);
-        setLocations(locRes.data.locations || []);
-        setJobTypes(typeRes.data.job_types || []);
-      } catch (err) {
-        console.error("Error loading options:", err);
-      }
-    };
-
-    loadOptions();
-  }, []);
-
   
   useEffect(() => {
     if (debounceTimerRef.current) {
@@ -179,9 +155,8 @@ const AdminJobs = () => {
   };
 
   
-  const openDetail = async (jobId, startInEditMode = false) => {
+  const openDetail = async (jobId) => {
     setShowDetailModal(true);
-    setEditMode(startInEditMode);
     setDetail(null);
 
     try {
@@ -190,7 +165,6 @@ const AdminJobs = () => {
         endpoints["admin-job-detail"](jobId),
       );
       setDetail(response.data);
-      setForm(buildForm(response.data));
     } catch (err) {
       console.error("Error fetching job detail:", err);
       toast.error(
@@ -202,55 +176,10 @@ const AdminJobs = () => {
     }
   };
 
-  const buildForm = (data) => ({
-    title: data.title || "",
-    min_salary: data.min_salary ?? "",
-    max_salary: data.max_salary ?? "",
-    deadline: data.deadline || "",
-    location_id: data.location_id ?? "",
-    job_type_id: data.job_type_id ?? "",
-    description: data.description || "",
-    requirements: data.requirements || "",
-    benefits: data.benefits || "",
-  });
-
   const closeDetail = () => {
     setShowDetailModal(false);
     setDetail(null);
-    setEditMode(false);
-    setForm({});
     setShowChangeStatusMenu(false);
-  };
-
-  const handleFormChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSave = async (e) => {
-    e.preventDefault();
-
-    try {
-      setSaving(true);
-      const response = await authApis().put(
-        endpoints["admin-job-detail"](detail.id),
-        {
-          ...form,
-          location_id: form.location_id ? Number(form.location_id) : undefined,
-          job_type_id: form.job_type_id ? Number(form.job_type_id) : undefined,
-        },
-      );
-
-      toast.success(response.data.message || "Cập nhật thành công");
-      setDetail(response.data.job);
-      setForm(buildForm(response.data.job));
-      setEditMode(false);
-      fetchJobs();
-    } catch (err) {
-      console.error("Error updating job:", err);
-      toast.error(getApiError(err, "Cập nhật thất bại"));
-    } finally {
-      setSaving(false);
-    }
   };
 
   
@@ -277,48 +206,9 @@ const AdminJobs = () => {
     }
   };
 
-  
-  const handleDelete = async () => {
-    if (!jobToDelete) return;
-
-    try {
-      setDeleting(true);
-      await authApis().delete(endpoints["admin-job-detail"](jobToDelete.id));
-
-      toast.success(`Đã xóa bài đăng "${jobToDelete.title}"`);
-      setJobToDelete(null);
-
-      if (jobs.length === 1 && currentPage > 1) {
-        setCurrentPage((prev) => prev - 1);
-      } else {
-        fetchJobs();
-      }
-    } catch (err) {
-      console.error("Error deleting job:", err);
-      toast.error(getApiError(err, "Không thể xóa bài đăng"));
-    } finally {
-      setDeleting(false);
-    }
-  };
-
-  const formatDate = (value) => {
-    if (!value) return "—";
-    const d = new Date(value);
-    if (isNaN(d.getTime())) return value;
-    return d.toLocaleDateString("vi-VN");
-  };
-
   const displayValue = (value) => {
     if (value === null || value === undefined || value === "") return "—";
     return value;
-  };
-
-  const formatSalary = (min, max) => {
-    const toTrieu = (v) => `${(v / 1000000).toFixed(0)} triệu`;
-    if (min && max) return `${toTrieu(min)} - ${toTrieu(max)}`;
-    if (min) return `Từ ${toTrieu(min)}`;
-    if (max) return `Đến ${toTrieu(max)}`;
-    return "Thỏa thuận";
   };
 
   const renderStatusBadge = (status) => (
@@ -332,7 +222,10 @@ const AdminJobs = () => {
     ["Công ty", data.company_name],
     ["Địa điểm", data.location_name],
     ["Loại công việc", data.job_type_name],
-    ["Mức lương", formatSalary(data.min_salary, data.max_salary)],
+    [
+      "Mức lương",
+      formatSalary(data.min_salary, data.max_salary, { compact: true }),
+    ],
     ["Hạn nộp", data.deadline ? formatDate(data.deadline) : null],
     ["Ngày đăng", data.created_at ? formatDate(data.created_at) : null],
     ["Trạng thái", data.status],
@@ -436,7 +329,7 @@ const AdminJobs = () => {
           )}
         </div>
 
-        <button type="submit" className="au-btn au-btn-primary">
+        <button type="submit" className="au-btn au-btn-search">
           Tìm kiếm
         </button>
       </form>
@@ -493,18 +386,6 @@ const AdminJobs = () => {
                       >
                         Chi tiết
                       </button>
-                      <button
-                        className="au-btn au-btn-primary"
-                        onClick={() => openDetail(job.id, true)}
-                      >
-                        Sửa
-                      </button>
-                      <button
-                        className="au-btn au-btn-danger"
-                        onClick={() => setJobToDelete(job)}
-                      >
-                        Xóa
-                      </button>
                     </td>
                   </tr>
                 ))}
@@ -522,11 +403,11 @@ const AdminJobs = () => {
       )}
 
       
-      {showDetailModal && (
+      {showDetailModal && createPortal(
         <div className="au-modal-overlay" onClick={closeDetail}>
           <div className="au-modal" onClick={(e) => e.stopPropagation()}>
             <div className="au-modal-header">
-              <h2>{editMode ? "Chỉnh sửa bài đăng" : "Chi tiết bài đăng"}</h2>
+              <h2>Chi tiết bài đăng</h2>
               <button
                 className="au-modal-close"
                 onClick={closeDetail}
@@ -553,145 +434,6 @@ const AdminJobs = () => {
                   <div className="au-spinner"></div>
                   <p>Đang tải...</p>
                 </div>
-              ) : editMode ? (
-                <form onSubmit={handleSave} className="au-form">
-                  <div className="au-form-note">
-                    Công ty: <strong>{detail.company_name}</strong>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Tiêu đề</label>
-                    <input
-                      className="form-control"
-                      name="title"
-                      value={form.title}
-                      onChange={handleFormChange}
-                    />
-                  </div>
-
-                  <div className="au-form-row">
-                    <div className="form-group">
-                      <label>Lương tối thiểu (VNĐ)</label>
-                      <input
-                        className="form-control"
-                        type="number"
-                        name="min_salary"
-                        value={form.min_salary}
-                        onChange={handleFormChange}
-                      />
-                    </div>
-                    <div className="form-group">
-                      <label>Lương tối đa (VNĐ)</label>
-                      <input
-                        className="form-control"
-                        type="number"
-                        name="max_salary"
-                        value={form.max_salary}
-                        onChange={handleFormChange}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="au-form-row">
-                    <div className="form-group">
-                      <label>Địa điểm</label>
-                      <select
-                        className="form-control"
-                        name="location_id"
-                        value={form.location_id}
-                        onChange={handleFormChange}
-                      >
-                        <option value="">-- Chọn địa điểm --</option>
-                        {locations.map((loc) => (
-                          <option key={loc.id} value={loc.id}>
-                            {loc.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="form-group">
-                      <label>Loại công việc</label>
-                      <select
-                        className="form-control"
-                        name="job_type_id"
-                        value={form.job_type_id}
-                        onChange={handleFormChange}
-                      >
-                        <option value="">-- Chọn loại --</option>
-                        {jobTypes.map((jt) => (
-                          <option key={jt.id} value={jt.id}>
-                            {jt.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="form-group">
-                    <label>Hạn nộp hồ sơ</label>
-                    <input
-                      className="form-control"
-                      type="date"
-                      name="deadline"
-                      value={form.deadline}
-                      onChange={handleFormChange}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Mô tả công việc</label>
-                    <textarea
-                      className="form-control"
-                      name="description"
-                      rows="4"
-                      value={form.description}
-                      onChange={handleFormChange}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Yêu cầu ứng viên</label>
-                    <textarea
-                      className="form-control"
-                      name="requirements"
-                      rows="4"
-                      value={form.requirements}
-                      onChange={handleFormChange}
-                    />
-                  </div>
-
-                  <div className="form-group">
-                    <label>Quyền lợi</label>
-                    <textarea
-                      className="form-control"
-                      name="benefits"
-                      rows="4"
-                      value={form.benefits}
-                      onChange={handleFormChange}
-                    />
-                  </div>
-
-                  <div className="au-modal-actions">
-                    <button
-                      type="button"
-                      className="au-btn au-btn-ghost"
-                      onClick={() => {
-                        setEditMode(false);
-                        setForm(buildForm(detail));
-                      }}
-                      disabled={saving}
-                    >
-                      Hủy
-                    </button>
-                    <button
-                      type="submit"
-                      className="au-btn au-btn-primary"
-                      disabled={saving}
-                    >
-                      {saving ? "Đang lưu..." : "Lưu thay đổi"}
-                    </button>
-                  </div>
-                </form>
               ) : (
                 <>
                   <div className="au-detail-head">
@@ -778,59 +520,15 @@ const AdminJobs = () => {
                     ))}
                   </dl>
 
-                  <div className="au-modal-actions">
-                    <button
-                      className="au-btn au-btn-danger"
-                      onClick={() => {
-                        setJobToDelete(detail);
-                        closeDetail();
-                      }}
-                    >
-                      Xóa bài đăng
-                    </button>
-                    <button
-                      className="au-btn au-btn-primary"
-                      onClick={() => setEditMode(true)}
-                    >
-                      Chỉnh sửa
-                    </button>
-                  </div>
                 </>
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       
-      {jobToDelete && (
-        <div className="au-modal-overlay" onClick={() => setJobToDelete(null)}>
-          <div className="au-confirm" onClick={(e) => e.stopPropagation()}>
-            <h2>Xác nhận xóa</h2>
-            <p>
-              Bạn có chắc muốn xóa bài đăng <strong>{jobToDelete.title}</strong>
-              ? Toàn bộ đơn ứng tuyển và lượt lưu của bài đăng này sẽ bị xóa
-              theo, không thể khôi phục.
-            </p>
-            <div className="au-modal-actions">
-              <button
-                className="au-btn au-btn-ghost"
-                onClick={() => setJobToDelete(null)}
-                disabled={deleting}
-              >
-                Hủy
-              </button>
-              <button
-                className="au-btn au-btn-danger"
-                onClick={handleDelete}
-                disabled={deleting}
-              >
-                {deleting ? "Đang xóa..." : "Xóa"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

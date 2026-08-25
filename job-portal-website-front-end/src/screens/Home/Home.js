@@ -1,6 +1,7 @@
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MyUserContext } from "../../configs/Contexts";
+import { UserRole } from "../../configs/constants";
 
 const ABOUT_POINTS = [
   "Cơ hội việc làm đa dạng từ nhiều lĩnh vực",
@@ -33,7 +34,34 @@ const CheckIcon = () => (
 const Home = () => {
   const navigate = useNavigate();
   const [user] = useContext(MyUserContext);
-  const isAdmin = user?.role === "admin";
+  const isAdmin = user?.role === UserRole.QUANTRIVIEN;
+  const heroContentRef = useRef(null);
+  const [heroContentOpacity, setHeroContentOpacity] = useState(1);
+
+  useEffect(() => {
+    const updateHeroContentOpacity = () => {
+      if (!heroContentRef.current) return;
+
+      const headerHeight = 70;
+      const fadeStart = headerHeight + 110;
+      const contentTop = heroContentRef.current.getBoundingClientRect().top;
+      const opacity = Math.min(
+        1,
+        Math.max(0, (contentTop - headerHeight) / (fadeStart - headerHeight)),
+      );
+
+      setHeroContentOpacity(opacity);
+    };
+
+    updateHeroContentOpacity();
+    window.addEventListener("scroll", updateHeroContentOpacity, { passive: true });
+    window.addEventListener("resize", updateHeroContentOpacity);
+
+    return () => {
+      window.removeEventListener("scroll", updateHeroContentOpacity);
+      window.removeEventListener("resize", updateHeroContentOpacity);
+    };
+  }, []);
 
   return (
     <div className="home-container">
@@ -53,7 +81,11 @@ const Home = () => {
         <div className="hero-overlay" aria-hidden="true" />
 
         <div className="hero-inner">
-          <div className="hero-content">
+          <div
+            ref={heroContentRef}
+            className="hero-content"
+            style={{ opacity: heroContentOpacity }}
+          >
             <h1 className="hero-title">
               Hãy tìm kiếm công việc
               <br />

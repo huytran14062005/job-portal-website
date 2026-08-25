@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useContext } from "react";
+import { createPortal } from "react-dom";
 import { authApis, endpoints } from "../../configs/Apis";
 import { useToast } from "../../components/Toast";
 import { ApplicationStatus } from "../../configs/constants";
@@ -10,6 +11,7 @@ import ChatModal from "../../components/ChatModal";
 import Pagination from "../../components/Pagination";
 import "../../css/CompanyApplications.css";
 import { getApiError, getBlobApiError } from "../../utils/apiError";
+import { formatDateOnly, formatSalary } from "../../utils/formatters";
 import {
   getApplicantAvatar,
   onApplicantAvatarError,
@@ -44,6 +46,19 @@ const CompanyApplications = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [showCvModal, setShowCvModal] = useState(false);
   const [currentCvUrl, setCurrentCvUrl] = useState("");
+  const [currentApplicationId, setCurrentApplicationId] = useState(null);
+  const [downloadingCv, setDownloadingCv] = useState(false);
+
+  useEffect(() => {
+    if (!showDetailModal && !showCvModal) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showDetailModal, showCvModal]);
 
   
   const [showChatModal, setShowChatModal] = useState(false);
@@ -167,9 +182,41 @@ const CompanyApplications = () => {
     fetchApplicationDetail(application.id);
   };
 
-  const handleViewCV = (cvUrl) => {
-    setCurrentCvUrl(cvUrl);
+  const handleViewCV = (application) => {
+    setCurrentCvUrl(application.cv_url);
+    setCurrentApplicationId(application.id);
     setShowCvModal(true);
+  };
+
+  const handleDownloadCv = async () => {
+    if (!currentApplicationId) return;
+
+    try {
+      setDownloadingCv(true);
+      const response = await authApis().get(
+        endpoints["company-application-cv-download"](currentApplicationId),
+        { responseType: "blob" },
+      );
+      const disposition = response.headers["content-disposition"] || "";
+      const encodedName = disposition.match(/filename\*=UTF-8''([^;]+)/i);
+      const plainName = disposition.match(/filename="?([^";]+)"?/i);
+      const fileName = encodedName
+        ? decodeURIComponent(encodedName[1])
+        : plainName?.[1] || "CV.pdf";
+      const url = window.URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      toast.error(getApiError(err, "Không thể tải xuống CV"));
+    } finally {
+      setDownloadingCv(false);
+    }
   };
 
   const handleOpenChat = (candidate) => {
@@ -246,12 +293,6 @@ const CompanyApplications = () => {
       default:
         return "status-badge-pending";
     }
-  };
-
-  const formatDateOnly = (dateString) => {
-    if (!dateString) return "N/A";
-    
-    return String(dateString).split(" ")[0];
   };
 
   if (loading && applications.length === 0) {
@@ -432,7 +473,7 @@ const CompanyApplications = () => {
                   {app.cv_url && (
                     <button
                       className="ca-btn ca-btn-ghost"
-                      onClick={() => handleViewCV(app.cv_url)}
+                      onClick={() => handleViewCV(app)}
                     >
                       Xem CV
                     </button>
@@ -475,7 +516,7 @@ const CompanyApplications = () => {
       )}
 
       
-      {showCvModal && (
+      {showCvModal && createPortal(
         <div className="modal-overlay" onClick={() => setShowCvModal(false)}>
           <div
             className="modal-content modal-cv"
@@ -484,6 +525,27 @@ const CompanyApplications = () => {
             <div className="modal-header">
               <h2>Xem CV</h2>
               <div className="modal-header-actions">
+                <button
+                  type="button"
+                  className="btn-download-cv"
+                  onClick={handleDownloadCv}
+                  disabled={downloadingCv}
+                  title="Tải xuống CV"
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M12 3v12" />
+                    <path d="m7 10 5 5 5-5" />
+                    <path d="M5 21h14" />
+                  </svg>
+                  <span>{downloadingCv ? "Đang tải..." : "Tải xuống"}</span>
+                </button>
                 <a
                   href={currentCvUrl}
                   target="_blank"
@@ -527,11 +589,12 @@ const CompanyApplications = () => {
               <PDFViewer pdfUrl={currentCvUrl} />
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       
-      {showDetailModal && (
+      {showDetailModal && createPortal(
         <div
           className="modal-overlay"
           onClick={() => setShowDetailModal(false)}
@@ -549,7 +612,6 @@ const CompanyApplications = () => {
                     <span
                       className={`ad-status ${getStatusBadgeClass(selectedApplication.status)}`}
                     >
-                      <span className="ad-status-dot"></span>
                       {selectedApplication.status}
                     </span>
                     <span className="ad-status-date">
@@ -677,10 +739,10 @@ const CompanyApplications = () => {
                         <div className="ad-field">
                           <span className="ad-item-label">Lương</span>
                           <span className="ad-item-value ad-item-value-salary">
-                            {selectedApplication.job_post.min_salary?.toLocaleString()}{" "}
-                            -{" "}
-                            {selectedApplication.job_post.max_salary?.toLocaleString()}{" "}
-                            VNĐ
+                            {formatSalary(
+                              selectedApplication.job_post.min_salary,
+                              selectedApplication.job_post.max_salary,
+                            )}
                           </span>
                         </div>
                       )}
@@ -756,7 +818,8 @@ const CompanyApplications = () => {
                 </div>
               )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       

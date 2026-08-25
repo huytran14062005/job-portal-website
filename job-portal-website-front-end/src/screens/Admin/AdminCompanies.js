@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { authApis, endpoints } from "../../configs/Apis";
 import { useToast } from "../../components/Toast";
 import Pagination from "../../components/Pagination";
@@ -6,6 +7,7 @@ import { CompanyStatus } from "../../configs/constants";
 import "../../css/AdminUsers.css";
 import "../../css/AdminCompanies.css";
 import { getApiError } from "../../utils/apiError";
+import { formatDate } from "../../utils/formatters";
 import {
   getCompanyLogo,
   onCompanyLogoError,
@@ -13,16 +15,16 @@ import {
 
 const STATUS_OPTIONS = [
   { value: "", label: "Tất cả trạng thái" },
-  { value: CompanyStatus.PENDING, label: "Chờ duyệt" },
-  { value: CompanyStatus.APPROVED, label: "Đã duyệt" },
-  { value: CompanyStatus.REJECT, label: "Đã từ chối" },
+  { value: CompanyStatus.CHO_DUYET, label: "Chờ duyệt" },
+  { value: CompanyStatus.DA_DUYET, label: "Đã duyệt" },
+  { value: CompanyStatus.DA_TU_CHOI, label: "Đã từ chối" },
 ];
 
 
 const STATUS_CLASS = {
-  [CompanyStatus.PENDING]: "au-status-pending",
-  [CompanyStatus.APPROVED]: "au-status-approved",
-  [CompanyStatus.REJECT]: "au-status-rejected",
+  [CompanyStatus.CHO_DUYET]: "au-status-pending",
+  [CompanyStatus.DA_DUYET]: "au-status-approved",
+  [CompanyStatus.DA_TU_CHOI]: "au-status-rejected",
 };
 
 const AdminCompanies = () => {
@@ -56,8 +58,8 @@ const AdminCompanies = () => {
   const [saving, setSaving] = useState(false);
 
   
-  const [companyToDelete, setCompanyToDelete] = useState(null);
-  const [deleting, setDeleting] = useState(false);
+  const [companyToLock, setCompanyToLock] = useState(null);
+  const [locking, setLocking] = useState(false);
   const [companyToReject, setCompanyToReject] = useState(null);
   const [processing, setProcessing] = useState(false);
 
@@ -285,7 +287,7 @@ const AdminCompanies = () => {
       );
 
       toast.success(
-        companyToReject.status === CompanyStatus.APPROVED
+        companyToReject.status === CompanyStatus.DA_DUYET
           ? `Đã thu hồi duyệt công ty "${companyToReject.company_name}"`
           : `Đã từ chối công ty "${companyToReject.company_name}"`,
       );
@@ -324,37 +326,29 @@ const AdminCompanies = () => {
   };
 
   
-  const handleDelete = async () => {
-    if (!companyToDelete) return;
+  const handleLock = async () => {
+    if (!companyToLock) return;
+
+    const isLocked = !companyToLock.is_locked;
 
     try {
-      setDeleting(true);
-      await authApis().delete(
-        endpoints["admin-company-detail"](companyToDelete.id),
+      setLocking(true);
+      await authApis().put(endpoints["admin-user-lock"](companyToLock.id), {
+        is_locked: isLocked,
+      });
+
+      toast.success(
+        `${isLocked ? "Đã khóa" : "Đã mở khóa"} tài khoản công ty "${companyToLock.company_name}"`,
       );
-
-      toast.success(`Đã xóa công ty "${companyToDelete.company_name}"`);
-      setCompanyToDelete(null);
+      setCompanyToLock(null);
       fetchPendingCount();
-
-      if (companies.length === 1 && currentPage > 1) {
-        setCurrentPage((prev) => prev - 1);
-      } else {
-        fetchCompanies();
-      }
+      fetchCompanies();
     } catch (err) {
-      console.error("Error deleting company:", err);
-      toast.error(getApiError(err, "Không thể xóa công ty"));
+      console.error("Error updating company account lock:", err);
+      toast.error(getApiError(err, "Không thể cập nhật trạng thái tài khoản"));
     } finally {
-      setDeleting(false);
+      setLocking(false);
     }
-  };
-
-  const formatDate = (value) => {
-    if (!value) return "—";
-    const d = new Date(value);
-    if (isNaN(d.getTime())) return value;
-    return d.toLocaleDateString("vi-VN");
   };
 
   const displayValue = (value) => {
@@ -372,6 +366,7 @@ const AdminCompanies = () => {
     ["ID", data.id],
     ["Tên đăng nhập", data.user_info?.username],
     ["Email", data.user_info?.email],
+    ["Trạng thái tài khoản", data.user_info?.is_locked ? "Đã khóa" : "Hoạt động"],
     ["Ngày đăng ký", data.user_info?.created_at ? formatDate(data.user_info.created_at) : null],
     ["Ngành nghề", data.industry],
     ["Quy mô", data.company_size ? `${data.company_size} nhân viên` : null],
@@ -503,7 +498,7 @@ const AdminCompanies = () => {
             )}
           </div>
 
-          <button type="submit" className="au-btn au-btn-primary">
+          <button type="submit" className="au-btn au-btn-search">
             Tìm kiếm
           </button>
         </form>
@@ -539,6 +534,7 @@ const AdminCompanies = () => {
                   <th>Ngành nghề</th>
                   <th>Quy mô</th>
                   <th>Trạng thái</th>
+                  <th>Tài khoản</th>
                   <th>Ngày đăng ký</th>
                   <th className="au-col-actions">Thao tác</th>
                 </tr>
@@ -562,6 +558,7 @@ const AdminCompanies = () => {
                     <td>{displayValue(c.industry)}</td>
                     <td>{c.company_size ? c.company_size : "—"}</td>
                     <td>{renderStatusBadge(c.status)}</td>
+                    <td>{c.is_locked ? "Đã khóa" : "Hoạt động"}</td>
                     <td>{formatDate(c.created_at)}</td>
                     <td className="au-col-actions">
                       {isPendingTab ? (
@@ -602,10 +599,10 @@ const AdminCompanies = () => {
                             Sửa
                           </button>
                           <button
-                            className="au-btn au-btn-danger"
-                            onClick={() => setCompanyToDelete(c)}
+                            className={`au-btn ${c.is_locked ? "au-btn-primary" : "au-btn-danger"}`}
+                            onClick={() => setCompanyToLock(c)}
                           >
-                            Xóa
+                            {c.is_locked ? "Mở khóa" : "Khóa"}
                           </button>
                         </>
                       )}
@@ -626,7 +623,7 @@ const AdminCompanies = () => {
       )}
 
       
-      {showDetailModal && (
+      {showDetailModal && createPortal(
         <div className="au-modal-overlay" onClick={closeDetail}>
           <div className="au-modal" onClick={(e) => e.stopPropagation()}>
             <div className="au-modal-header">
@@ -777,28 +774,31 @@ const AdminCompanies = () => {
 
                   <div className="au-modal-actions">
                     <button
-                      className="au-btn au-btn-danger"
+                      className={`au-btn ${detail.user_info?.is_locked ? "au-btn-primary" : "au-btn-danger"}`}
                       onClick={() => {
-                        setCompanyToDelete(detail);
+                        setCompanyToLock({
+                          ...detail,
+                          is_locked: detail.user_info?.is_locked,
+                        });
                         closeDetail();
                       }}
                     >
-                      Xóa công ty
+                      {detail.user_info?.is_locked ? "Mở khóa tài khoản" : "Khóa tài khoản"}
                     </button>
 
-                    {detail.status !== CompanyStatus.REJECT && (
+                    {detail.status !== CompanyStatus.DA_TU_CHOI && (
                       <button
                         className="au-btn au-btn-ghost"
                         onClick={() => setCompanyToReject(detail)}
                         disabled={processing}
                       >
-                        {detail.status === CompanyStatus.APPROVED
+                        {detail.status === CompanyStatus.DA_DUYET
                           ? "Thu hồi duyệt"
                           : "Từ chối"}
                       </button>
                     )}
 
-                    {detail.status !== CompanyStatus.APPROVED && (
+                    {detail.status !== CompanyStatus.DA_DUYET && (
                       <button
                         className="au-btn au-btn-primary"
                         onClick={() => handleApprove(detail)}
@@ -819,23 +819,24 @@ const AdminCompanies = () => {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       
-      {companyToReject && (
+      {companyToReject && createPortal(
         <div
           className="au-modal-overlay"
           onClick={() => setCompanyToReject(null)}
         >
           <div className="au-confirm" onClick={(e) => e.stopPropagation()}>
             <h2>
-              {companyToReject.status === CompanyStatus.APPROVED
+              {companyToReject.status === CompanyStatus.DA_DUYET
                 ? "Thu hồi duyệt"
                 : "Từ chối công ty"}
             </h2>
             <p>
-              {companyToReject.status === CompanyStatus.APPROVED ? (
+              {companyToReject.status === CompanyStatus.DA_DUYET ? (
                 <>
                   Thu hồi trạng thái đã duyệt của công ty{" "}
                   <strong>{companyToReject.company_name}</strong>? Tài khoản này
@@ -864,47 +865,52 @@ const AdminCompanies = () => {
               >
                 {processing
                   ? "Đang xử lý..."
-                  : companyToReject.status === CompanyStatus.APPROVED
+                  : companyToReject.status === CompanyStatus.DA_DUYET
                     ? "Thu hồi"
                     : "Từ chối"}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       
-      {companyToDelete && (
+      {companyToLock && createPortal(
         <div
           className="au-modal-overlay"
-          onClick={() => setCompanyToDelete(null)}
+          onClick={() => setCompanyToLock(null)}
         >
           <div className="au-confirm" onClick={(e) => e.stopPropagation()}>
-            <h2>Xác nhận xóa</h2>
+            <h2>{companyToLock.is_locked ? "Xác nhận mở khóa" : "Xác nhận khóa tài khoản"}</h2>
             <p>
-              Bạn có chắc muốn xóa công ty{" "}
-              <strong>{companyToDelete.company_name}</strong>? Tài khoản nhà
-              tuyển dụng cùng toàn bộ bài đăng và đơn ứng tuyển liên quan sẽ bị
-              xóa và không thể khôi phục.
+              {companyToLock.is_locked ? "Mở khóa" : "Khóa"} tài khoản công ty{" "}
+              <strong>{companyToLock.company_name}</strong>? Dữ liệu công ty,
+              bài đăng và đơn ứng tuyển vẫn được giữ nguyên.
             </p>
             <div className="au-modal-actions">
               <button
                 className="au-btn au-btn-ghost"
-                onClick={() => setCompanyToDelete(null)}
-                disabled={deleting}
+                onClick={() => setCompanyToLock(null)}
+                disabled={locking}
               >
                 Hủy
               </button>
               <button
                 className="au-btn au-btn-danger"
-                onClick={handleDelete}
-                disabled={deleting}
+                onClick={handleLock}
+                disabled={locking}
               >
-                {deleting ? "Đang xóa..." : "Xóa"}
+                {locking
+                  ? "Đang xử lý..."
+                  : companyToLock.is_locked
+                    ? "Mở khóa"
+                    : "Khóa tài khoản"}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

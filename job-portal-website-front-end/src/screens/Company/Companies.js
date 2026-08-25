@@ -1,14 +1,17 @@
-import React, { useState, useEffect, useCallback, useRef, useContext } from "react";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  useContext,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import Apis, { endpoints, authApis } from "../../configs/Apis";
 import { MyUserContext } from "../../configs/Contexts";
 import Pagination from "../../components/Pagination";
 import "../../css/Companies.css";
 import { getApiError } from "../../utils/apiError";
-import {
-  getCompanyLogo,
-  onCompanyLogoError,
-} from "../../utils/defaultImages";
+import { getCompanyLogo, onCompanyLogoError } from "../../utils/defaultImages";
 
 const Companies = () => {
   const navigate = useNavigate();
@@ -22,16 +25,14 @@ const Companies = () => {
     pages: 0,
   });
 
-  
   const [searchKeyword, setSearchKeyword] = useState("");
   const [industryKeyword, setIndustryKeyword] = useState("");
-  const [followFilter, setFollowFilter] = useState(""); 
+  const [followFilter, setFollowFilter] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const hasActiveFilters = Boolean(
     searchKeyword.trim() || industryKeyword.trim() || followFilter,
   );
 
-  
   const debounceTimerRef = useRef(null);
   const isFirstRenderRef = useRef(true);
 
@@ -46,8 +47,6 @@ const Companies = () => {
         if (industry.trim()) params.industry = industry.trim();
         if (followFilter) params.follow_filter = followFilter;
 
-        
-        
         const api = user ? authApis() : Apis;
         const response = await api.get(endpoints.companies, { params });
 
@@ -61,7 +60,10 @@ const Companies = () => {
       } catch (err) {
         console.error("Error fetching companies:", err);
         setError(
-          getApiError(err, "Không thể tải danh sách công ty. Vui lòng thử lại sau."),
+          getApiError(
+            err,
+            "Không thể tải danh sách công ty. Vui lòng thử lại sau.",
+          ),
         );
       } finally {
         setIsSearching(false);
@@ -70,7 +72,6 @@ const Companies = () => {
     [user],
   );
 
-  
   useEffect(() => {
     const initialLoad = async () => {
       setLoading(true);
@@ -81,32 +82,26 @@ const Companies = () => {
     initialLoad();
   }, [fetchCompanies]);
 
-  
   useEffect(() => {
     if (!user || user.role !== "ungvien") {
       setFollowFilter("");
     }
   }, [user]);
 
-  
   useEffect(() => {
     if (isFirstRenderRef.current) {
       isFirstRenderRef.current = false;
       return;
     }
 
-    
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
 
-    
     debounceTimerRef.current = setTimeout(() => {
-      
       fetchCompanies(searchKeyword, industryKeyword, 1, followFilter);
-    }, 500); 
+    }, 500);
 
-    
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
@@ -177,12 +172,10 @@ const Companies = () => {
 
   return (
     <div className="companies-container">
-      
       <div className="companies-header">
         <h1 className="companies-title">Công ty đang tuyển dụng</h1>
       </div>
 
-      
       <div className="companies-search-card">
         <form onSubmit={handleSearch} className="companies-search-form">
           <div className="search-fields-row">
@@ -210,7 +203,6 @@ const Companies = () => {
               />
             </div>
 
-            
             {user && user.role === "ungvien" && (
               <div className="search-field-medium">
                 <label htmlFor="followFilter">Trạng thái theo dõi</label>
@@ -244,16 +236,14 @@ const Companies = () => {
                   <path d="m21 21-4.35-4.35" strokeWidth="2" />
                 </svg>
                 Tìm kiếm
-              </button>              
+              </button>
             </div>
           </div>
         </form>
       </div>
 
-      
       {pagination.total > 0 && (
         <div className="companies-result-count">
-          Tìm thấy <strong>{pagination.total}</strong> công ty
           {pagination.pages > 1 && (
             <span className="companies-result-page">
               {" "}
@@ -283,10 +273,7 @@ const Companies = () => {
               ? "Không tìm thấy công ty phù hợp với bộ lọc"
               : "Hiện chưa có công ty nào đang đăng tin tuyển dụng"}
           </p>
-          <button
-            className="btn-browse-jobs"
-            onClick={() => navigate("/jobs")}
-          >
+          <button className="btn-browse-jobs" onClick={() => navigate("/jobs")}>
             Xem tất cả việc làm
           </button>
         </div>
@@ -299,7 +286,6 @@ const Companies = () => {
                 className="company-card"
                 onClick={() => handleViewCompany(company.id)}
               >
-                
                 <div className="company-card-head">
                   <div className="company-card-logo">
                     <img
@@ -309,17 +295,14 @@ const Companies = () => {
                       onError={onCompanyLogoError}
                     />
                   </div>
-                  
-                  
+
                   {company.is_followed && (
                     <div className="company-card-following-badge">
-                    
                       Đang theo dõi
                     </div>
                   )}
                 </div>
 
-                
                 <div className="company-card-body">
                   <h3 className="company-card-name">{company.company_name}</h3>
 
@@ -330,7 +313,6 @@ const Companies = () => {
                   )}
                 </div>
 
-                
                 <div className="company-card-meta">
                   {formatCompanySize(company.company_size) && (
                     <div className="company-card-meta-item">
@@ -371,7 +353,6 @@ const Companies = () => {
             ))}
           </div>
 
-          
           <Pagination
             page={pagination.page}
             totalPages={pagination.pages}

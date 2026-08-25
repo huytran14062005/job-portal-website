@@ -9,7 +9,6 @@ from web.services.exceptions import NotFoundError
 
 
 _COMPANY_SHEET_WIDTHS = [8, 25, 30, 20, 35, 30, 15, 20, 50]
-_CANDIDATE_SHEET_WIDTHS = [8, 30, 35, 25, 15, 20, 15]
 
 
 def _build_excel_file(rows, sheet_name, column_widths):
@@ -57,37 +56,5 @@ def export_company_applications_service(company_id, job_id=None, status_value=No
         f'DanhSach_UngVien_Job{job_id}_{timestamp}.xlsx' if job_id
         else f'DanhSach_UngVien_{timestamp}.xlsx'
     )
-
-    return output, filename
-
-
-def export_candidate_applications_service(candidate_id):
-    applications = export_dao.get_candidate_applications_for_export(candidate_id)
-
-    
-    if not applications:
-        raise NotFoundError("Bạn chưa có đơn ứng tuyển nào")
-
-    rows = []
-    for index, row in enumerate(applications, start=1):
-        if row.min_salary and row.max_salary:
-            salary_range = f"{row.min_salary:,} - {row.max_salary:,} VNĐ"
-        elif row.min_salary:
-            salary_range = f"Từ {row.min_salary:,} VNĐ"
-        else:
-            salary_range = "Thỏa thuận"
-
-        rows.append({
-            "STT": index,
-            "Công ty": row.company_name,
-            "Vị trí": row.job_title,
-            "Mức lương": salary_range,
-            "Trạng thái": row.status.value if row.status else "N/A",
-            "Ngày nộp": row.applied_at.strftime('%d/%m/%Y %H:%M') if row.applied_at else "N/A",
-            "Deadline": row.deadline.strftime('%d/%m/%Y') if row.deadline else "N/A"
-        })
-
-    output = _build_excel_file(rows, 'Lịch sử ứng tuyển', _CANDIDATE_SHEET_WIDTHS)
-    filename = f'LichSu_UngTuyen_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx'
 
     return output, filename

@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
+import { createPortal } from "react-dom";
 import { useNavigate } from "react-router-dom";
 import Apis, { authApis, endpoints } from "../../configs/Apis";
 import { MyUserContext } from "../../configs/Contexts";
@@ -6,6 +7,7 @@ import { useToast } from "../../components/Toast";
 import Pagination from "../../components/Pagination";
 import "../../css/CompanyMyJobs.css";
 import { getApiError } from "../../utils/apiError";
+import { formatDateOnly, formatSalary } from "../../utils/formatters";
 
 const CompanyMyJobs = () => {
   const navigate = useNavigate();
@@ -25,6 +27,17 @@ const CompanyMyJobs = () => {
   const [detailLoading, setDetailLoading] = useState(false);
   const [locations, setLocations] = useState([]);
   const [jobTypes, setJobTypes] = useState([]);
+
+  useEffect(() => {
+    if (!showDetailModal && !showConfirmModal) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showDetailModal, showConfirmModal]);
 
   useEffect(() => {
     
@@ -54,12 +67,6 @@ const CompanyMyJobs = () => {
 
     loadCategories();
   }, []);
-
-    const formatDateOnly = (dateString) => {
-    if (!dateString) return "N/A";
-    
-    return String(dateString).split(" ")[0];
-  };
 
   const fetchCompanyJobs = async () => {
     try {
@@ -183,20 +190,6 @@ const CompanyMyJobs = () => {
     navigate(`/company/my-jobs/edit/${jobId}`);
   };
 
-  const formatSalary = (min, max) => {
-    if (!min && !max) return "Thỏa thuận";
-
-    const formatNumber = (num) => {
-      return num.toLocaleString("vi-VN");
-    };
-
-    if (min && max) {
-      return `${formatNumber(min)} - ${formatNumber(max)} VNĐ`;
-    }
-    if (min) return `Từ ${formatNumber(min)} VNĐ`;
-    if (max) return `Đến ${formatNumber(max)} VNĐ`;
-  };
-
   const getStatusBadge = (status) => {
     const statusConfig = {
       "hoạt động": { className: "status-active", label: "Đang tuyển" },
@@ -210,11 +203,6 @@ const CompanyMyJobs = () => {
         {config.label}
       </span>
     );
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "N/A";
-    return dateString;
   };
 
   if (loading && pagination.page === 1) {
@@ -266,49 +254,14 @@ const CompanyMyJobs = () => {
 
                 <div className="job-card-body">
                   <div className="job-info-item">
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <line x1="12" y1="1" x2="12" y2="23" />
-                      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                    </svg>
                     <span>{formatSalary(job.min_salary, job.max_salary)}</span>
                   </div>
 
                   <div className="job-info-item">
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                      <line x1="16" y1="2" x2="16" y2="6" />
-                      <line x1="8" y1="2" x2="8" y2="6" />
-                      <line x1="3" y1="10" x2="21" y2="10" />
-                    </svg>
-                    <span>Hạn nộp: {formatDate(job.deadline)}</span>
+                    <span>Hạn nộp: {formatDateOnly(job.deadline)}</span>
                   </div>
 
                   <div className="job-info-item">
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <polyline points="12 6 12 12 16 14" />
-                    </svg>
                     <span>Đăng: {formatDateOnly(job.created_at)}</span>
                   </div>
                 </div>
@@ -393,7 +346,7 @@ const CompanyMyJobs = () => {
       )}
 
       
-      {showDetailModal && (
+      {showDetailModal && createPortal(
         <div className="job-detail-overlay" onClick={handleCloseDetailModal}>
           <div
             className="job-detail-modal"
@@ -500,13 +453,17 @@ const CompanyMyJobs = () => {
               </>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       
-      {showConfirmModal && confirmAction && (
+      {showConfirmModal && confirmAction && createPortal(
         <div className="modal-overlay" onClick={handleCancelToggleStatus}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal-content job-status-confirm-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
 
               Bạn có xác nhận muốn {confirmAction.actionText.toLowerCase()} bài đăng
               <br />
@@ -529,7 +486,8 @@ const CompanyMyJobs = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

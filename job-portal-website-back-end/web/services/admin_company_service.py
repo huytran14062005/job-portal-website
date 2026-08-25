@@ -1,6 +1,6 @@
 from web import dao
-from web.models import CompanyStatus, User, UserRole
-from web.services.exceptions import ConflictError, NotFoundError, ValidationError
+from web.models import CompanyStatus
+from web.services.exceptions import ConflictError, NotFoundError
 from web.services.validators import (
     Limits,
     optional_non_negative_int,
@@ -64,22 +64,10 @@ def update_company_service(company_id, data):
     return dao.get_company_detail_by_id(company_id)
 
 
-def delete_company_service(company_id):
-    user = User.query.get(company_id)
-
-    if not user:
-        raise NotFoundError("Công ty không tồn tại")
-
-    if user.role != UserRole.NHATUYENDUNG:
-        raise ValidationError("User này không phải nhà tuyển dụng")
-
-    return dao.delete_company(user)
-
-
 def approve_company_service(company_id):
     company = _get_company_or_404(company_id)
 
-    if company.status == CompanyStatus.APPROVED:
+    if company.status == CompanyStatus.DA_DUYET:
         raise ConflictError("Công ty đã được duyệt trước đó")
 
     dao.approve_company(company)
@@ -90,7 +78,7 @@ def approve_company_service(company_id):
 def reject_company_service(company_id):
     company = _get_company_or_404(company_id)
 
-    if company.status == CompanyStatus.REJECT:
+    if company.status == CompanyStatus.DA_TU_CHOI:
         raise ConflictError("Công ty đã bị từ chối trước đó")
 
     hidden_job_posts = dao.reject_company(company)

@@ -1,21 +1,29 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager
-from flask_cors import CORS
+import os
+
 import cloudinary
+import firebase_admin
+from firebase_admin import credentials
+from flask import Flask, request
+from flask_caching import Cache
+from flask_cors import CORS
+from flask_login import LoginManager
+from flask_mail import Mail
+from flask_socketio import SocketIO
+from flask_sqlalchemy import SQLAlchemy
+from web.config import Config
 
 app = Flask(__name__)
 
-
-from web.config import Config
 app.config.from_object(Config)
 
+cache = Cache(app)
 
-CORS(app, resources={
+CORS(app, supports_credentials=True, resources={
     r"/api/*": {
-        "origins": "*",
+        "origins": Config.FRONTEND_ORIGINS,
         "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-        "allow_headers": ["Content-Type", "Authorization"]
+        "allow_headers": ["Content-Type", "Authorization"],
+        "expose_headers": ["Content-Disposition"]
     }
 })
 
@@ -26,18 +34,13 @@ db = SQLAlchemy(app=app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-
 from web import dao
 
 @login_manager.user_loader
 def load_user(user_id):
     return dao.get_user_by_id(user_id)
 
-
-from flask_mail import Mail
-
 mail = Mail(app)
-
 
 cloudinary.config(
     cloud_name=Config.CLOUD_NAME,
@@ -46,17 +49,11 @@ cloudinary.config(
 )
 
 
-from flask_socketio import SocketIO
-
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 
 user_sockets = {}
 
-
-import firebase_admin
-from firebase_admin import credentials
-import os
 
 try:
     
@@ -74,20 +71,13 @@ try:
         firebase_admin.initialize_app(cred, {
             'databaseURL': firebase_database_url
         })
-        print(f"✓ Firebase initialized successfully from: {firebase_cred_path}")
-    else:
-        print(f"⚠ Firebase service account key not found at: {firebase_cred_path}")
-        print(f"   Base dir: {basedir}")
-        print(f"   Looking for: {firebase_cred_filename}")
-except Exception as e:
-    print(f"⚠ Firebase initialization failed: {e}")
+except Exception:
+    pass
 
-
-from flask import request
 
 @socketio.on('connect')
 def handle_connect():
-    print(f"Client connected: {request.sid}")
+    pass
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -95,13 +85,11 @@ def handle_disconnect():
     for user_id, sid in list(user_sockets.items()):
         if sid == request.sid:
             del user_sockets[user_id]
-            print(f"User {user_id} disconnected")
             break
 
 @socketio.on('register')
 def handle_register(user_id):
     user_sockets[user_id] = request.sid
-    print(f"User {user_id} registered with socket {request.sid}")
 
 @socketio.on('new_message_sent')
 def handle_new_message(data):
@@ -112,27 +100,11 @@ def handle_new_message(data):
         sender_role = data.get('sender_role')
         company_name = data.get('company_name')
         company_id = data.get('company_id')
-        message = data.get('message')
-        
-        print(f" [socketio] Received new_message_sent event:")
-        print(f"   - recipient_id: {recipient_id}")
-        print(f"   - sender_id: {sender_id}")
-        print(f"   - sender_name: {sender_name}")
-        print(f"   - sender_role: {sender_role}")
-        print(f"   - company_name: {company_name}")
-        print(f"   - message preview: {message[:50] if message else 'N/A'}...")
-        
         
         if sender_role == 'nhatuyendung':
             notification_text = f"Có tin nhắn mới từ nhà tuyển dụng {company_name or sender_name}"
         else:
             notification_text = f"Có tin nhắn mới từ ứng viên {sender_name}"
-        
-        print(f"💬 [socketio] Creating notification: {notification_text}")
-        
-        
-        
-        
         
         
         from web.models import User
@@ -142,34 +114,25 @@ def handle_new_message(data):
             if recipient_user.role.value == 'ungvien':
                 
                 nav_id = company_id or sender_id
-                print(f"   → Recipient is candidate, saving company_id: {nav_id}")
             else:
-                
                 nav_id = sender_id
-                print(f"   → Recipient is recruiter, saving candidate_id: {nav_id}")
         else:
-            
             nav_id = sender_id
-            print(f"   ⚠ Recipient user not found, using sender_id: {nav_id}")
         
         
         from web.utils.notification_helper import create_and_emit_notification
         from web.models import NotificationType
         
-        notification = create_and_emit_notification(
+        create_and_emit_notification(
             user_id=recipient_id,
-            notification_type=NotificationType.NEW_MESSAGE,
+            notification_type=NotificationType.TIN_NHAN_MOI,
             content=notification_text,
             related_type='message',
             related_id=nav_id
         )
         
-        print(f"✓ [socketio] Message notification created (ID: {notification.id}) and emitted to user {recipient_id}")
-            
-    except Exception as e:
-        print(f"✗ [socketio] Error handling new message: {e}")
-        import traceback
-        traceback.print_exc()
+    except Exception:
+        pass
 
 
 from web.blueprints import (

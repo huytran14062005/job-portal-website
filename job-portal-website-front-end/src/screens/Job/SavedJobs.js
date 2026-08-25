@@ -4,6 +4,7 @@ import { authApis, endpoints } from "../../configs/Apis";
 import Pagination from "../../components/Pagination";
 import { useToast } from "../../components/Toast";
 import { getApiError } from "../../utils/apiError";
+import { formatSalary } from "../../utils/formatters";
 import {
   getCompanyLogo,
   onCompanyLogoError,
@@ -20,22 +21,6 @@ const SavedJobs = () => {
     total: 0,
     totalPages: 0,
   });
-
-  const formatSalary = (min, max) => {
-    if (!min && !max) return "Thỏa thuận";
-
-    const formatNumber = (num) => {
-      
-      return (num * 1000000).toLocaleString("vi-VN");
-    };
-
-    if (min && max) {
-      return `${formatNumber(min)} - ${formatNumber(max)} VNĐ`;
-    }
-    if (min) return `Từ ${formatNumber(min)} VNĐ`;
-    if (max) return `Đến ${formatNumber(max)} VNĐ`;
-    return "Thỏa thuận";
-  };
 
   useEffect(() => {
     fetchSavedJobs();
@@ -102,12 +87,7 @@ const SavedJobs = () => {
   return (
     <div className="saved-jobs-container">
       <div className="saved-jobs-header">
-        <h1 className="saved-jobs-title">Việc làm đã lưu</h1>
-        {pagination.total > 0 && (
-          <p className="saved-jobs-count">
-            Tổng cộng: <strong>{pagination.total}</strong> việc làm
-          </p>
-        )}
+        <h1 className="jobs-title">Việc làm đã lưu</h1>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -199,7 +179,9 @@ const SavedJobs = () => {
                         />
                       </svg>
                       <span>
-                        {formatSalary(job.salary_min, job.salary_max)}
+                        {formatSalary(job.salary_min, job.salary_max, {
+                          valuesInMillions: true,
+                        })}
                       </span>
                     </div>
                   )}

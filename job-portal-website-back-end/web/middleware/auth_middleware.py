@@ -1,8 +1,23 @@
 from functools import wraps
-from flask import request, jsonify
+
 import jwt
-import os
-from web.models import UserRole
+from flask import current_app, jsonify, request
+
+from web.models import User, UserRole
+
+
+def _decode_access_token(auth_header):
+    scheme, token = auth_header.split()
+
+    if scheme.lower() != "bearer":
+        raise jwt.InvalidTokenError
+
+    return jwt.decode(
+        token,
+        current_app.config["JWT_SECRET"],
+        algorithms=["HS256"],
+        options={"require": ["user_id", "iat", "exp"]},
+    )
 
 
 def optional_token(f):
@@ -12,17 +27,14 @@ def optional_token(f):
         
         if auth_header:
             try:
-                token = auth_header.split(" ")[1]
-                decoded = jwt.decode(
-                    token,
-                    os.getenv("JWT_SECRET", "secret"),
-                    algorithms=["HS256"]
-                )
-                
-                request.user_id = decoded['user_id']
-                request.username = decoded['username']
-                request.user_role = decoded['role']
-            except:
+                decoded = _decode_access_token(auth_header)
+
+                user = User.query.get(decoded['user_id'])
+                if user and not user.is_locked:
+                    request.user_id = user.id
+                    request.username = user.username
+                    request.user_role = user.role.value
+            except (jwt.InvalidTokenError, ValueError):
                 pass
         
         return f(*args, **kwargs)
@@ -39,20 +51,22 @@ def verify_token(f):
             return jsonify({"error": "Chưa đăng nhập"}), 401
 
         try:
-            token = auth_header.split(" ")[1]
-            decoded = jwt.decode(
-                token,
-                os.getenv("JWT_SECRET", "secret"),
-                algorithms=["HS256"]
-            )
+            decoded = _decode_access_token(auth_header)
 
-            request.user_id = decoded['user_id']
-            request.username = decoded['username']
-            request.user_role = decoded['role']
+            user = User.query.get(decoded['user_id'])
+            if not user:
+                return jsonify({"error": "Tài khoản không tồn tại"}), 401
+
+            if user.is_locked:
+                return jsonify({"error": "Tài khoản đã bị khóa"}), 403
+
+            request.user_id = user.id
+            request.username = user.username
+            request.user_role = user.role.value
 
         except jwt.ExpiredSignatureError:
             return jsonify({"error": "Token đã hết hạn"}), 401
-        except jwt.InvalidTokenError:
+        except (jwt.InvalidTokenError, ValueError):
             return jsonify({"error": "Token không hợp lệ"}), 403
         except Exception as ex:
             return jsonify({"error": str(ex)}), 403
@@ -86,16 +100,16 @@ def verify_company_approved(f):
             if not company:
                 return jsonify({"error": "Thông tin công ty không tồn tại"}), 404
 
-            if company.status == CompanyStatus.REJECT:
+            if company.status == CompanyStatus.DA_TU_CHOI:
                 return jsonify({
                     "error": "Tài khoản công ty đã bị từ chối nên không thể sử dụng "
                              "chức năng này. Vui lòng cập nhật lại hồ sơ công ty.",
                     "status": "rejected"
                 }), 403
 
-            if company.status != CompanyStatus.APPROVED:
+            if company.status != CompanyStatus.DA_DUYET:
                 return jsonify({
-                    "error": "Tài khoản công ty đang chờ admin duyệt. Vui lòng đợi.",
+                    "error": "Tài khoản công ty đang chờ quản trị viên duyệt. Vui lòng đợi.",
                     "status": "pending"
                 }), 403
 

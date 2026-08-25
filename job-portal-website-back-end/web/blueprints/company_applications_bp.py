@@ -1,6 +1,6 @@
-import math
+from io import BytesIO
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, request, send_file
 
 from web import app, dao
 from web.blueprints.api_errors import handle_api_errors
@@ -11,6 +11,8 @@ from web.services.application_service import (
     parse_application_status_filter,
     update_application_status_service,
 )
+from web.services.cv_service import download_cv_service
+from web.utils.pagination import build_pagination
 
 company_applications_bp = Blueprint('company_applications', __name__,
                                     url_prefix='/api/company/applications')
@@ -31,7 +33,11 @@ def get_company_applications():
         status=parse_application_status_filter(request.args.get('status', ''))
     )
 
-    pages = math.ceil(total / app.config["APPLICATION_SIZE"])
+    pagination = build_pagination(
+        page,
+        app.config["APPLICATION_SIZE"],
+        total
+    )
 
     applications_list = []
     for app_item in applications:
@@ -52,7 +58,7 @@ def get_company_applications():
                 "phone": candidate.phone,
                 "avatar_url": candidate.avatar_url
             },
-            "cv_url": app_item.cv_url,
+            "cv_url": app_item.cv_file.cv_url,
             "cv_file_id": app_item.cv_file_id,
             "status": app_item.status.value,
             "applied_at": app_item.applied_at.strftime('%d-%m-%Y %H:%M:%S'),
@@ -61,9 +67,9 @@ def get_company_applications():
 
     return jsonify({
         "applications": applications_list,
-        "total": total,
-        "pages": pages,
-        "current_page": page
+        "total": pagination["total"],
+        "pages": pagination["total_pages"],
+        "current_page": pagination["page"]
     }), 200
 
 
@@ -101,12 +107,29 @@ def get_application_detail(application_id):
             "avatar_url": candidate.avatar_url,
             "description": candidate.description
         },
-        "cv_url": application.cv_url,
+        "cv_url": application.cv_file.cv_url,
         "cv_file_id": application.cv_file_id,
         "status": application.status.value,
         "applied_at": application.applied_at.strftime('%d-%m-%Y %H:%M:%S'),
         "apply_count": application.apply_count or 1
     }), 200
+
+
+@company_applications_bp.route('/<int:application_id>/cv/download', methods=['GET'])
+@verify_token
+@verify_role(UserRole.NHATUYENDUNG)
+@verify_company_approved
+@handle_api_errors
+def download_application_cv(application_id):
+    application = get_application_detail_service(application_id, request.user_id)
+    content, mimetype, filename = download_cv_service(application.cv_file)
+
+    return send_file(
+        BytesIO(content),
+        mimetype=mimetype or 'application/octet-stream',
+        as_attachment=True,
+        download_name=filename,
+    )
 
 
 @company_applications_bp.route('/<int:application_id>/status', methods=['PUT'])

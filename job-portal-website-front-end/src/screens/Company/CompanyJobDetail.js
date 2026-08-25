@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from "react";
+import { createPortal } from "react-dom";
 import { useParams, useNavigate } from "react-router-dom";
 import { authApis, endpoints } from "../../configs/Apis";
 import Apis from "../../configs/Apis";
@@ -7,6 +8,7 @@ import { useToast } from "../../components/Toast";
 import MySpinner from "../../components/MySpinner";
 import "../../css/CompanyJobDetail.css";
 import { getApiError } from "../../utils/apiError";
+import { formatDateOnly, formatSalary } from "../../utils/formatters";
 
 const CompanyJobDetail = () => {
   const { jobId } = useParams();
@@ -19,6 +21,17 @@ const CompanyJobDetail = () => {
   const [jobTypes, setJobTypes] = useState([]);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [confirmAction, setConfirmAction] = useState(null);
+
+  useEffect(() => {
+    if (!showConfirmModal) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [showConfirmModal]);
 
   useEffect(() => {
     if (!user || user.role !== "nhatuyendung") {
@@ -112,26 +125,6 @@ const CompanyJobDetail = () => {
   const handleCancelToggleStatus = () => {
     setShowConfirmModal(false);
     setConfirmAction(null);
-  };
-
-  const formatSalary = (minSalary, maxSalary) => {
-    if (!minSalary && !maxSalary) return "Thỏa thuận";
-
-    const formatNumber = (num) => {
-      return num.toLocaleString("vi-VN");
-    };
-
-    if (minSalary && maxSalary) {
-      return `${formatNumber(minSalary)} - ${formatNumber(maxSalary)} VNĐ`;
-    }
-    if (minSalary) return `Từ ${formatNumber(minSalary)} VNĐ`;
-    if (maxSalary) return `Đến ${formatNumber(maxSalary)} VNĐ`;
-  };
-
-  const formatDateOnly = (dateString) => {
-    if (!dateString) return "N/A";
-    
-    return String(dateString).split(" ")[0];
   };
 
   const getStatusBadge = (status) => {
@@ -306,7 +299,7 @@ const CompanyJobDetail = () => {
       </div>
 
       
-      {showConfirmModal && confirmAction && (
+      {showConfirmModal && confirmAction && createPortal(
         <div className="modal-overlay" onClick={handleCancelToggleStatus}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             Bạn có xác nhận muốn {confirmAction.actionText.toLowerCase()} bài
@@ -331,7 +324,8 @@ const CompanyJobDetail = () => {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

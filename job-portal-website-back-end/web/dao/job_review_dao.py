@@ -128,15 +128,3 @@ def delete_review(review):
     except Exception as ex:
         db.session.rollback()
         raise Exception(f'Lỗi khi xóa đánh giá: {str(ex)}')
-
-
-def get_job_rating_summary(job_post_id):
-    result = db.session.query(
-        func.avg(JobReview.rating).label('avg_rating'),
-        func.count(JobReview.id).label('total_reviews')
-    ).filter(JobReview.job_post_id == job_post_id).first()
-
-    return {
-        'avg_rating': round(float(result.avg_rating), 2) if result.avg_rating else 0,
-        'total_reviews': result.total_reviews
-    }

@@ -1,13 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { removeDiacritics } from "../utils/text";
 import "../css/SearchableSelect.css";
-
-
-const removeDiacritics = (str) =>
-  str
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/đ/g, "d")
-    .replace(/Đ/g, "D");
 
 
 const SearchableSelect = ({

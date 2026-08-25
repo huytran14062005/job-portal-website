@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef, useContext } from "react";
+import { createPortal } from "react-dom";
 import { authApis, endpoints } from "../configs/Apis";
 import * as Firebase from "../utils/firebase";
 import { MyUserContext } from "../configs/Contexts";
 import { useSocket } from "../contexts/SocketContext";
+import { formatDate } from "../utils/formatters";
 import {
   getAvatarByRole,
   onApplicantAvatarError,
@@ -26,7 +28,7 @@ const formatDayLabel = (timestamp) => {
   const now = Date.now();
   if (isSameDay(timestamp, now)) return "Hôm nay";
   if (isSameDay(timestamp, now - 86400000)) return "Hôm qua";
-  return new Date(timestamp).toLocaleDateString("vi-VN");
+  return formatDate(timestamp);
 };
 
 
@@ -52,16 +54,29 @@ const ChatModal = ({
   const [currentUserProfile, setCurrentUserProfile] = useState(null);
 
   const messagesRef = useRef(null);
-  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesContainerRef.current) {
+      messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
   };
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
 
   
   useEffect(() => {
@@ -90,8 +105,22 @@ const ChatModal = ({
 
       try {
         
-        const profileResponse = await authApis().get(endpoints["current-user"]);
-        setCurrentUserProfile(profileResponse.data);
+        const profileResponse = await authApis().get(
+          user.role === "nhatuyendung"
+            ? endpoints["company-profile"]
+            : endpoints["current-user"],
+        );
+        const profileData = profileResponse.data;
+
+        setCurrentUserProfile(
+          user.role === "nhatuyendung"
+            ? {
+                ...profileData,
+                full_name: profileData.company_name,
+                avatar_url: profileData.logo_url,
+              }
+            : profileData,
+        );
 
         
         const tokenResponse = await authApis().get(endpoints["firebase-token"]);
@@ -277,7 +306,7 @@ const ChatModal = ({
 
   if (!isOpen) return null;
 
-  return (
+  return createPortal(
     <div className="chat-modal-overlay" onClick={onClose}>
       <div className="chat-modal" onClick={(e) => e.stopPropagation()}>
         
@@ -317,7 +346,7 @@ const ChatModal = ({
         </div>
 
         
-        <div className="chat-messages">
+        <div ref={messagesContainerRef} className="chat-messages">
           {loading ? (
             <div className="chat-skeleton">
               <div className="chat-skeleton-bubble received"></div>
@@ -387,7 +416,6 @@ const ChatModal = ({
               );
             })
           )}
-          <div ref={messagesEndRef} />
         </div>
 
         
@@ -423,7 +451,8 @@ const ChatModal = ({
           </button>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 };
 

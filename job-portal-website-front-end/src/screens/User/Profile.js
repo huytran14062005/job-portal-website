@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { authApis, endpoints } from "../../configs/Apis";
+import { UserRole } from "../../configs/constants";
 import CVManagement from "../../components/CVManagement";
 import { getApiError } from "../../utils/apiError";
 import {
@@ -192,7 +193,7 @@ const Profile = () => {
           </>
         ),
       },
-      admin: {
+      [UserRole.QUANTRIVIEN]: {
         label: "Quản trị viên",
         className: "role-badge-admin",
         icon: (
@@ -451,7 +452,7 @@ const Profile = () => {
               
               <div className="profile-field">
                 <label className="profile-label">
-                  Địa chỉ email <span className="text-required">*</span>
+                  Địa chỉ email
                 </label>
                 <div className="profile-value">
                   <span className="profile-text">{profile?.email || ""}</span>

@@ -1,5 +1,7 @@
 import axios from "axios";
 
+const baseURL = process.env.REACT_APP_API_URL || "http://localhost:5000/api";
+
 export const endpoints = {
   jobs: "/jobs",
   locations: "/locations",
@@ -12,6 +14,8 @@ export const endpoints = {
   "related-jobs": (jobId) => `/jobs/${jobId}/related`,
   register: "/auth/register",
   login: "/auth/login",
+  refresh: "/auth/refresh",
+  logout: "/auth/logout",
   "forgot-password-request": "/auth/forgot-password/request",
   "forgot-password-verify": "/auth/forgot-password/verify",
   "forgot-password-reset": "/auth/forgot-password/reset",
@@ -35,7 +39,10 @@ export const endpoints = {
     `/company/applications/${applicationId}`,
   "company-application-status": (applicationId) =>
     `/company/applications/${applicationId}/status`,
+  "company-application-cv-download": (applicationId) =>
+    `/company/applications/${applicationId}/cv/download`,
   cvs: "/cvs",
+  "cv-download": (cvId) => `/cvs/${cvId}/download`,
   "cv-rename": (cvId) => `/cvs/${cvId}`,
   "cv-delete-bulk": "/cvs",
   notifications: "/notifications",
@@ -46,6 +53,7 @@ export const endpoints = {
   "delete-notification": (notificationId) => `/notifications/${notificationId}`,
   "admin-users": "/admin/users",
   "admin-user-detail": (userId) => `/admin/users/${userId}`,
+  "admin-user-lock": (userId) => `/admin/users/${userId}/lock`,
   "admin-user-profile": (userId) => `/admin/users/${userId}/profile`,
   "admin-companies": "/admin/companies",
   "admin-companies-pending": "/admin/companies/pending",
@@ -67,16 +75,80 @@ export const endpoints = {
   "export-applications": "/export/applications",
 };
 
-export const authApis = () => {
-  const token = localStorage.getItem("token");
-  return axios.create({
-    baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000/api",
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+const publicApi = axios.create({
+  baseURL,
+  withCredentials: true,
+});
+
+const authenticatedApi = axios.create({
+  baseURL,
+  withCredentials: true,
+});
+
+let refreshRequest = null;
+
+const clearSession = () => {
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
 };
 
-export default axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000/api",
+authenticatedApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+
+  return config;
 });
+
+authenticatedApi.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    const hasAccessToken = Boolean(localStorage.getItem("token"));
+
+    if (
+      error.response?.status !== 401 ||
+      originalRequest?._retry ||
+      !hasAccessToken
+    ) {
+      return Promise.reject(error);
+    }
+
+    originalRequest._retry = true;
+
+    if (!refreshRequest) {
+      refreshRequest = publicApi
+        .post(endpoints.refresh)
+        .then((response) => {
+          const token = response.data.token;
+          localStorage.setItem("token", token);
+          return token;
+        })
+        .finally(() => {
+          refreshRequest = null;
+        });
+    }
+
+    try {
+      const token = await refreshRequest;
+      originalRequest.headers.Authorization = `Bearer ${token}`;
+      return authenticatedApi(originalRequest);
+    } catch (refreshError) {
+      clearSession();
+
+      if (window.location.pathname !== "/login") {
+        window.location.assign("/login");
+      }
+
+      return Promise.reject(refreshError);
+    }
+  },
+);
+
+export const authApis = () => {
+  return authenticatedApi;
+};
+
+export default publicApi;

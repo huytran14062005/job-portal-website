@@ -4,20 +4,17 @@ from datetime import datetime
 def parse_date_flexible(value, error_message="Ngày tháng sai định dạng"):
     if not value:
         return None
-    
-    
+
     if hasattr(value, 'date') and callable(value.date):
         return value.date()
     
     if isinstance(value, datetime):
         return value.date()
     
-    
     value = str(value).strip()
     if not value:
         return None
-    
-    
+
     formats = [
         "%d-%m-%Y",  
         "%Y-%m-%d",  

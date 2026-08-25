@@ -13,7 +13,7 @@ admin_stats_bp = Blueprint('admin_stats', __name__, url_prefix='/api/admin/stats
 
 @admin_stats_bp.route('/companies', methods=['GET'])
 @verify_token
-@verify_role(UserRole.ADMIN)
+@verify_role(UserRole.QUANTRIVIEN)
 @handle_api_errors
 def get_company_stats():
     companies, summary, from_date, to_date = get_company_statistics_service(
@@ -31,7 +31,7 @@ def get_company_stats():
 
 @admin_stats_bp.route('/users', methods=['GET'])
 @verify_token
-@verify_role(UserRole.ADMIN)
+@verify_role(UserRole.QUANTRIVIEN)
 @handle_api_errors
 def get_user_stats():
     points, summary, from_date, to_date = get_user_registration_statistics_service(

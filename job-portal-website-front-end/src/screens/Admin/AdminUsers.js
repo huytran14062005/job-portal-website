@@ -1,10 +1,12 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { authApis, endpoints } from "../../configs/Apis";
 import { useToast } from "../../components/Toast";
 import Pagination from "../../components/Pagination";
 import { UserRole, Gender } from "../../configs/constants";
 import "../../css/AdminUsers.css";
 import { getApiError } from "../../utils/apiError";
+import { formatDate } from "../../utils/formatters";
 import {
   getAvatarByRole,
   onApplicantAvatarError,
@@ -49,8 +51,8 @@ const AdminUsers = () => {
   const [saving, setSaving] = useState(false);
 
   
-  const [userToDelete, setUserToDelete] = useState(null);
-  const [deleting, setDeleting] = useState(false);
+  const [userToLock, setUserToLock] = useState(null);
+  const [locking, setLocking] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -230,35 +232,28 @@ const AdminUsers = () => {
   };
 
   
-  const handleDelete = async () => {
-    if (!userToDelete) return;
+  const handleLock = async () => {
+    if (!userToLock) return;
+
+    const isLocked = !userToLock.is_locked;
 
     try {
-      setDeleting(true);
-      await authApis().delete(endpoints["admin-user-detail"](userToDelete.id));
+      setLocking(true);
+      await authApis().put(endpoints["admin-user-lock"](userToLock.id), {
+        is_locked: isLocked,
+      });
 
-      toast.success(`Đã xóa tài khoản "${userToDelete.username}"`);
-      setUserToDelete(null);
-
-      
-      if (users.length === 1 && currentPage > 1) {
-        setCurrentPage((prev) => prev - 1);
-      } else {
-        fetchUsers();
-      }
+      toast.success(
+        `${isLocked ? "Đã khóa" : "Đã mở khóa"} tài khoản "${userToLock.username}"`,
+      );
+      setUserToLock(null);
+      fetchUsers();
     } catch (err) {
-      console.error("Error deleting user:", err);
-      toast.error(getApiError(err, "Không thể xóa người dùng"));
+      console.error("Error updating account lock:", err);
+      toast.error(getApiError(err, "Không thể cập nhật trạng thái tài khoản"));
     } finally {
-      setDeleting(false);
+      setLocking(false);
     }
-  };
-
-  const formatDate = (value) => {
-    if (!value) return "—";
-    const d = new Date(value);
-    if (isNaN(d.getTime())) return value;
-    return d.toLocaleDateString("vi-VN");
   };
 
   const displayValue = (value) => {
@@ -288,6 +283,7 @@ const AdminUsers = () => {
       ["ID", data.id],
       ["Tên đăng nhập", data.username],
       ["Email", data.email],
+      ["Trạng thái tài khoản", data.is_locked ? "Đã khóa" : "Hoạt động"],
       ["Ngày tạo", data.created_at ? formatDate(data.created_at) : null],
     ];
 
@@ -416,7 +412,7 @@ const AdminUsers = () => {
           )}
         </div>
 
-        <button type="submit" className="au-btn au-btn-primary">
+        <button type="submit" className="au-btn au-btn-search">
           Tìm kiếm
         </button>
       </form>
@@ -447,6 +443,7 @@ const AdminUsers = () => {
                   <th>Tên đăng nhập</th>
                   <th>Email</th>
                   <th>Vai trò</th>
+                  <th>Trạng thái</th>
                   <th>Ngày tạo</th>
                   <th className="au-col-actions">Thao tác</th>
                 </tr>
@@ -462,6 +459,7 @@ const AdminUsers = () => {
                         {ROLE_LABELS[u.role] || u.role}
                       </span>
                     </td>
+                    <td>{u.is_locked ? "Đã khóa" : "Hoạt động"}</td>
                     <td>{formatDate(u.created_at)}</td>
                     <td className="au-col-actions">
                       <button
@@ -477,10 +475,10 @@ const AdminUsers = () => {
                         Sửa
                       </button>
                       <button
-                        className="au-btn au-btn-danger"
-                        onClick={() => setUserToDelete(u)}
+                        className={`au-btn ${u.is_locked ? "au-btn-primary" : "au-btn-danger"}`}
+                        onClick={() => setUserToLock(u)}
                       >
-                        Xóa
+                        {u.is_locked ? "Mở khóa" : "Khóa"}
                       </button>
                     </td>
                   </tr>
@@ -500,7 +498,7 @@ const AdminUsers = () => {
       )}
 
       
-      {showDetailModal && (
+      {showDetailModal && createPortal(
         <div className="au-modal-overlay" onClick={closeDetail}>
           <div className="au-modal" onClick={(e) => e.stopPropagation()}>
             <div className="au-modal-header">
@@ -677,7 +675,7 @@ const AdminUsers = () => {
                 <>
                   
                   <div className="au-detail-head">
-                    {detail.role === UserRole.ADMIN ? (
+                    {detail.role === UserRole.QUANTRIVIEN ? (
                       <div className="au-detail-avatar au-detail-avatar-text">
                         {getInitials(getDisplayName(detail))}
                       </div>
@@ -721,13 +719,13 @@ const AdminUsers = () => {
 
                   <div className="au-modal-actions">
                     <button
-                      className="au-btn au-btn-danger"
+                      className={`au-btn ${detail.is_locked ? "au-btn-primary" : "au-btn-danger"}`}
                       onClick={() => {
-                        setUserToDelete(detail);
+                        setUserToLock(detail);
                         closeDetail();
                       }}
                     >
-                      Xóa tài khoản
+                      {detail.is_locked ? "Mở khóa tài khoản" : "Khóa tài khoản"}
                     </button>
                     <button
                       className="au-btn au-btn-primary"
@@ -740,37 +738,42 @@ const AdminUsers = () => {
               )}
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
 
       
-      {userToDelete && (
-        <div className="au-modal-overlay" onClick={() => setUserToDelete(null)}>
+      {userToLock && createPortal(
+        <div className="au-modal-overlay" onClick={() => setUserToLock(null)}>
           <div className="au-confirm" onClick={(e) => e.stopPropagation()}>
-            <h2>Xác nhận xóa</h2>
+            <h2>{userToLock.is_locked ? "Xác nhận mở khóa" : "Xác nhận khóa tài khoản"}</h2>
             <p>
-              Bạn có chắc muốn xóa tài khoản{" "}
-              <strong>{userToDelete.username}</strong>? Toàn bộ dữ liệu như hồ
-              sơ, đơn ứng tuyển, bài đăng sẽ bị xóa và không thể khôi phục.
+              {userToLock.is_locked ? "Mở khóa" : "Khóa"} tài khoản{" "}
+              <strong>{userToLock.username}</strong>? Dữ liệu tài khoản vẫn được giữ nguyên.
             </p>
             <div className="au-modal-actions">
               <button
                 className="au-btn au-btn-ghost"
-                onClick={() => setUserToDelete(null)}
-                disabled={deleting}
+                onClick={() => setUserToLock(null)}
+                disabled={locking}
               >
                 Hủy
               </button>
               <button
                 className="au-btn au-btn-danger"
-                onClick={handleDelete}
-                disabled={deleting}
+                onClick={handleLock}
+                disabled={locking}
               >
-                {deleting ? "Đang xóa..." : "Xóa"}
+                {locking
+                  ? "Đang xử lý..."
+                  : userToLock.is_locked
+                    ? "Mở khóa"
+                    : "Khóa tài khoản"}
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   );

@@ -9,6 +9,7 @@ import JobReviews from "../../components/JobReviews";
 import { getSavedJobStatusMap } from "./savedJobStatus";
 import { isJobExpired } from "../../utils/jobExpiry";
 import { getApiError } from "../../utils/apiError";
+import { formatSalary } from "../../utils/formatters";
 import {
   getCompanyLogo,
   onCompanyLogoError,
@@ -256,20 +257,6 @@ const JobDetail = () => {
     return { label: "Đã ứng tuyển", disabled: true, className: "applied" };
   };
 
-  const formatSalary = (minSalary, maxSalary) => {
-    if (!minSalary && !maxSalary) return "Thỏa thuận";
-
-    const formatNumber = (num) => {
-      return num.toLocaleString("vi-VN");
-    };
-
-    if (minSalary && maxSalary) {
-      return `${formatNumber(minSalary)} - ${formatNumber(maxSalary)} VNĐ`;
-    }
-    if (minSalary) return `Từ ${formatNumber(minSalary)} VNĐ`;
-    if (maxSalary) return `Đến ${formatNumber(maxSalary)} VNĐ`;
-  };
-
   if (loading) {
     return <MySpinner />;
   }
@@ -339,6 +326,7 @@ const JobDetail = () => {
               </div>
             </div>
 
+            {user?.role === "ungvien" && (
             <div className="job-header-actions">
               <button
                 className={`btn-save-detail ${isSaved ? "saved" : ""} ${
@@ -391,6 +379,7 @@ const JobDetail = () => {
                 {applyBtn.label}
               </button>
             </div>
+            )}
           </div>
 
           {job?.status === "ẩn" && (

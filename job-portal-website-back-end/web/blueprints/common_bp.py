@@ -2,7 +2,7 @@ import math
 
 from flask import Blueprint, jsonify, request
 
-from web import app, dao
+from web import app, cache, dao
 from web.blueprints.api_errors import handle_api_errors
 from web.middleware.auth_middleware import optional_token
 from web.services.common_service import get_companies_service, get_company_detail_service
@@ -11,6 +11,7 @@ common_bp = Blueprint('common', __name__, url_prefix='/api')
 
 
 @common_bp.route('/locations', methods=['GET'])
+@cache.cached(timeout=86400, key_prefix='public:locations')
 @handle_api_errors
 def get_locations():
     locations = dao.get_all_locations()
@@ -22,6 +23,7 @@ def get_locations():
 
 
 @common_bp.route('/job-types', methods=['GET'])
+@cache.cached(timeout=86400, key_prefix='public:job-types')
 @handle_api_errors
 def get_job_types():
     job_types = dao.get_all_job_types()
@@ -33,6 +35,7 @@ def get_job_types():
 
 
 @common_bp.route('/industries', methods=['GET'])
+@cache.cached(timeout=5000, key_prefix='public:industries')
 @handle_api_errors
 def get_industries():
     industries = dao.get_all_industries()
@@ -65,12 +68,14 @@ def get_companies():
 
 
 @common_bp.route('/companies/<int:company_id>', methods=['GET'])
+@cache.cached(timeout=300)
 @handle_api_errors
 def get_company_detail(company_id):
     return jsonify(get_company_detail_service(company_id)), 200
 
 
 @common_bp.route('/companies/<int:company_id>/jobs', methods=['GET'])
+@cache.cached(timeout=300, query_string=True)
 @handle_api_errors
 def get_company_jobs_public(company_id):
     page = int(request.args.get('page', 1))

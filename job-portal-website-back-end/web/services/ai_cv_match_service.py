@@ -332,7 +332,7 @@ def match_cv_to_job(job_id, cv_id, candidate_id):
     if not job:
         raise NotFoundError("Công việc không tồn tại.")
 
-    if not job.company or job.company.status != CompanyStatus.APPROVED:
+    if not job.company or job.company.status != CompanyStatus.DA_DUYET:
         raise NotFoundError("Công việc không tồn tại.")
 
     cv = CVFile.query.filter_by(id=cv_id, candidate_id=candidate_id).first()

@@ -12,6 +12,7 @@ from web.services.job_post_service import (
     update_job_post_service,
     update_job_post_status_service,
 )
+from web.utils.public_cache import invalidate_public_cache
 
 company_jobs_bp = Blueprint('company_jobs', __name__, url_prefix='/api/company/jobs')
 
@@ -40,6 +41,7 @@ def create_job_post():
     data = request.get_json(silent=True) or {}
 
     job_post = create_job_post_service(company_id=request.user_id, data=data)
+    invalidate_public_cache()
 
     return jsonify({
         "message": "Tạo job post thành công",
@@ -86,6 +88,7 @@ def update_job_post(job_id):
     data = request.get_json(silent=True) or {}
 
     job_post = update_job_post_service(job_id=job_id, company_id=request.user_id, data=data)
+    invalidate_public_cache()
 
     return jsonify({
         "message": "Cập nhật job post thành công",
@@ -102,6 +105,7 @@ def update_job_status(job_id):
     data = request.get_json(silent=True) or {}
 
     job_post = update_job_post_status_service(job_id, request.user_id, data.get('status', ''))
+    invalidate_public_cache()
 
     return jsonify({
         "message": "Cập nhật trạng thái thành công",

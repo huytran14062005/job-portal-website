@@ -16,7 +16,7 @@ export const PostStatus = {
 export const UserRole = {
   UNGVIEN: "ungvien",
   NHATUYENDUNG: "nhatuyendung",
-  ADMIN: "admin",
+  QUANTRIVIEN: "quantrivien",
 };
 
 
@@ -28,8 +28,8 @@ export const Gender = {
 
 
 export const CompanyStatus = {
-  PENDING: "chờ duyệt",
-  APPROVED: "đã duyệt",
-  REJECT: "đã từ chối",
+  CHO_DUYET: "chờ duyệt",
+  DA_DUYET: "đã duyệt",
+  DA_TU_CHOI: "đã từ chối",
 };
 

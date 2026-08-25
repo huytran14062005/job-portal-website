@@ -8,6 +8,7 @@ import { useToast } from "../../components/Toast";
 import Pagination from "../../components/Pagination";
 import "../../css/CompanyDetail.css";
 import { getApiError } from "../../utils/apiError";
+import { formatSalary } from "../../utils/formatters";
 import {
   getCompanyLogo,
   onCompanyLogoError,
@@ -191,22 +192,6 @@ const CompanyDetail = () => {
 
   const handleViewJob = (jobId) => {
     navigate(`/jobs/${jobId}`);
-  };
-
-  const formatSalary = (min, max) => {
-    if (!min && !max) return "Thỏa thuận";
-
-    const formatNumber = (num) => {
-      
-      return (num * 1000000).toLocaleString("vi-VN");
-    };
-
-    if (min && max) {
-      return `${formatNumber(min)} - ${formatNumber(max)} VNĐ`;
-    }
-    if (min) return `Từ ${formatNumber(min)} VNĐ`;
-    if (max) return `Đến ${formatNumber(max)} VNĐ`;
-    return "Thỏa thuận";
   };
 
   const handlePageChange = (newPage) => {
@@ -529,7 +514,9 @@ const CompanyDetail = () => {
                                   strokeLinejoin="round"
                                 />
                               </svg>
-                              {formatSalary(job.salary_min, job.salary_max)}
+                              {formatSalary(job.salary_min, job.salary_max, {
+                                valuesInMillions: true,
+                              })}
                             </span>
                           )}
                         </div>

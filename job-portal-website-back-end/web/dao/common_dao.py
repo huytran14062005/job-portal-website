@@ -1,5 +1,5 @@
 from web import db
-from web.models import JobLocation, JobType, CompanyInfo, CompanyStatus, JobPost, CompanyFollow
+from web.models import JobLocation, JobType, CompanyInfo, JobPost, CompanyFollow
 from sqlalchemy import func
 from .base_dao import apply_pagination
 from .job_dao import approved_company_condition, open_job_posts_condition
@@ -135,7 +135,7 @@ def get_company_by_id(company_id):
     company = (
         CompanyInfo.query
         .filter(CompanyInfo.id == company_id)
-        .filter(CompanyInfo.status == CompanyStatus.APPROVED)
+        .filter(approved_company_condition())
         .first()
     )
 

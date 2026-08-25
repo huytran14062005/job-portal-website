@@ -17,9 +17,6 @@ REGISTERABLE_ROLES = {
 
 
 
-
-
-
 def check_constraint_of_username(username):
     text = validate_username_format(username)
 
@@ -62,7 +59,7 @@ def register_service(username, email, password, confirm, role):
     validate_required_fields(username=username, email=email, password=password,
                              confirm=confirm, role=role)
 
-    user_role = role if isinstance(role, UserRole) else parse_register_role(role)
+    user_role = parse_register_role(role)
     clean_username = check_constraint_of_username(username)
     clean_email = check_constraint_of_email(email)
     check_constraint_of_password(password, confirm)
@@ -83,5 +80,8 @@ def login_service(username, password):
 
     if not user:
         raise ValidationError("Sai tên đăng nhập hoặc mật khẩu!")
+
+    if user.is_locked:
+        raise ValidationError("Tài khoản của bạn đã bị đình chỉ.")
 
     return user

@@ -12,8 +12,7 @@ def get_company_statistics(from_date=None, to_date=None):
 
     job_query = db.session.query(
         JobPost.company_id.label('company_id'),
-        func.count(JobPost.id).label('job_count'),
-        func.avg((JobPost.min_salary + JobPost.max_salary) / 2).label('avg_salary')
+        func.count(JobPost.id).label('job_count')
     )
 
     if start:
@@ -68,7 +67,6 @@ def get_company_statistics(from_date=None, to_date=None):
             CompanyInfo.company_size,
             CompanyInfo.status,
             func.coalesce(job_stats.c.job_count, 0).label('job_count'),
-            job_stats.c.avg_salary,
             func.coalesce(application_stats.c.application_count, 0).label('application_count')
         )
         .outerjoin(job_stats, job_stats.c.company_id == CompanyInfo.id)
@@ -78,7 +76,7 @@ def get_company_statistics(from_date=None, to_date=None):
     )
 
     companies = []
-    for company_id, company_name, company_size, status, job_count, avg_salary, application_count in rows:
+    for company_id, company_name, company_size, status, job_count, application_count in rows:
 
         by_status = status_counts.get(company_id, {})
         application_status = {
@@ -93,8 +91,7 @@ def get_company_statistics(from_date=None, to_date=None):
             'status': status.value if status else None,
             'job_count': int(job_count or 0),
             'application_count': int(application_count or 0),
-            'application_status': application_status,
-            'avg_salary': int(avg_salary) if avg_salary else 0
+            'application_status': application_status
         })
 
     summary = {
@@ -168,7 +165,7 @@ def get_user_registration_stats(from_date=None, to_date=None):
             created_month.label('month'),
             func.count(User.id).label('total')
         )
-        .filter(User.role != UserRole.ADMIN, User.created_at >= start)
+        .filter(User.role != UserRole.QUANTRIVIEN, User.created_at >= start)
     )
 
     if end:
@@ -198,7 +195,7 @@ def get_user_registration_stats(from_date=None, to_date=None):
 
     totals = dict(
         db.session.query(User.role, func.count(User.id))
-        .filter(User.role != UserRole.ADMIN)
+        .filter(User.role != UserRole.QUANTRIVIEN)
         .group_by(User.role)
         .all()
     )

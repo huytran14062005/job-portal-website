@@ -294,6 +294,26 @@
   animation: scaleIn 0.25s ease;
 }
 
+.modal-content.job-status-confirm-modal {
+    box-sizing: border-box;
+    width: min(400px, calc(100vw - 40px));
+    min-width: 0;
+    max-width: 400px;
+    padding: 22px 28px;
+}
+
+.job-status-confirm-modal .modal-actions {
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.job-status-confirm-modal .modal-btn {
+  flex: 0 1 132px;
+  min-width: 0;
+  padding: 10px 20px;
+  font-size: 14px;
+}
+
 @keyframes scaleIn {
   from {
     transform: scale(0.95);

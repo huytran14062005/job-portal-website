@@ -187,7 +187,7 @@ const EditJob = () => {
       <form className="post-job-form" onSubmit={handleSubmit}>
         
         <div className="form-group">
-          <label htmlFor="title" className="form-label required">
+          <label htmlFor="title" className="form-label">
             Tiêu đề công việc
           </label>
           <input
@@ -204,7 +204,7 @@ const EditJob = () => {
         
         <div className="form-row">
           <div className="form-group">
-            <label htmlFor="location_id" className="form-label required">
+            <label htmlFor="location_id" className="form-label">
               Địa điểm làm việc
             </label>
             <select
@@ -224,7 +224,7 @@ const EditJob = () => {
           </div>
 
           <div className="form-group">
-            <label htmlFor="job_type_id" className="form-label required">
+            <label htmlFor="job_type_id" className="form-label">
               Loại công việc
             </label>
             <select
@@ -279,7 +279,7 @@ const EditJob = () => {
 
         
         <div className="form-group">
-          <label htmlFor="deadline" className="form-label required">
+          <label htmlFor="deadline" className="form-label">
             Hạn nộp hồ sơ
           </label>
           <input
@@ -294,7 +294,7 @@ const EditJob = () => {
 
         
         <div className="form-group">
-          <label htmlFor="description" className="form-label required">
+          <label htmlFor="description" className="form-label">
             Mô tả công việc
           </label>
           <textarea

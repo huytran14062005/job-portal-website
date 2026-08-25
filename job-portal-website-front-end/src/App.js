@@ -1,6 +1,5 @@
-import React from "react";
+import React, { useReducer } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import { useReducer } from "react";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import BackToTop from "./components/BackToTop";
@@ -31,6 +30,7 @@ import AdminJobs from "./screens/Admin/AdminJobs";
 import AdminStats from "./screens/Admin/AdminStats";
 import { MyUserContext } from "./configs/Contexts";
 import MyUserReducer from "./reducers/MyUserReducer";
+import { UserRole } from "./configs/constants";
 import "./css/Style.css";
 
 function App() {
@@ -132,7 +132,7 @@ function App() {
                     <Route
                       path="/admin/users"
                       element={
-                        <ProtectedRoute roles={["admin"]}>
+                        <ProtectedRoute roles={[UserRole.QUANTRIVIEN]}>
                           <AdminUsers />
                         </ProtectedRoute>
                       }
@@ -140,7 +140,7 @@ function App() {
                     <Route
                       path="/admin/companies"
                       element={
-                        <ProtectedRoute roles={["admin"]}>
+                        <ProtectedRoute roles={[UserRole.QUANTRIVIEN]}>
                           <AdminCompanies />
                         </ProtectedRoute>
                       }
@@ -148,7 +148,7 @@ function App() {
                     <Route
                       path="/admin/jobs"
                       element={
-                        <ProtectedRoute roles={["admin"]}>
+                        <ProtectedRoute roles={[UserRole.QUANTRIVIEN]}>
                           <AdminJobs />
                         </ProtectedRoute>
                       }
@@ -156,7 +156,7 @@ function App() {
                     <Route
                       path="/admin/stats"
                       element={
-                        <ProtectedRoute roles={["admin"]}>
+                        <ProtectedRoute roles={[UserRole.QUANTRIVIEN]}>
                           <AdminStats />
                         </ProtectedRoute>
                       }

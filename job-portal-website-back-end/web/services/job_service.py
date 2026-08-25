@@ -19,11 +19,11 @@ def toggle_save_job_service(user_id, job_post_id):
 
     
     if job_post.status != PostStatus.HOAT_DONG:
-        raise ValidationError("Job này không còn hoạt động")
+        raise ValidationError("Bài đăng này không còn hoạt động")
 
     
-    if not job_post.company or job_post.company.status != CompanyStatus.APPROVED:
-        raise ValidationError("Job này không còn hoạt động")
+    if not job_post.company or job_post.company.status != CompanyStatus.DA_DUYET:
+        raise ValidationError("Bài đăng này không còn hoạt động")
 
     
     if dao.is_job_expired(job_post.deadline, job_post.status):

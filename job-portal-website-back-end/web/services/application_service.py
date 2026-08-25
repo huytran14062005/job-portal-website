@@ -47,7 +47,7 @@ def get_reapply_info(application, job_status=None, job_deadline=None, company_st
     
 
     
-    if company_status is not None and company_status != CompanyStatus.APPROVED:
+    if company_status is not None and company_status != CompanyStatus.DA_DUYET:
         info["reason"] = "Công việc này hiện không nhận hồ sơ"
         return info
 
@@ -127,7 +127,7 @@ def apply_job_service(candidate_id, job_post_id, cv_file=None, cv_file_id=None):
         raise ValidationError("Công việc này không còn hoạt động")
 
     
-    if not job_post.company or job_post.company.status != CompanyStatus.APPROVED:
+    if not job_post.company or job_post.company.status != CompanyStatus.DA_DUYET:
         raise ValidationError("Công việc này hiện không nhận hồ sơ")
 
     
@@ -223,7 +223,7 @@ def _notify_company_new_application(job_post, candidate_id, application, is_reap
 
         create_and_emit_notification(
             user_id=job_post.company_id,
-            notification_type=NotificationType.NEW_APPLICATION,
+            notification_type=NotificationType.DON_UNG_TUYEN_MOI,
             content=(
                 f'{candidate_name} vừa {action_text} ứng tuyển cho vị trí '
                 f'"{job_post.title}". Hãy xem xét hồ sơ ngay!'
@@ -231,8 +231,8 @@ def _notify_company_new_application(job_post, candidate_id, application, is_reap
             related_type='application',
             related_id=application.id
         )
-    except Exception as ex:
-        print(f"✗ Failed to create notification for company: {ex}")
+    except Exception:
+        pass
 
 
 def _notify_candidate_status_changed(application, new_status):
@@ -260,10 +260,10 @@ def _notify_candidate_status_changed(application, new_status):
 
         create_and_emit_notification(
             user_id=application.candidate_id,
-            notification_type=NotificationType.APPLICATION_STATUS,
+            notification_type=NotificationType.TRANG_THAI_DON,
             content=content,
             related_type='application',
             related_id=application.id
         )
-    except Exception as ex:
-        print(f"✗ Failed to create notification: {ex}")
+    except Exception:
+        pass

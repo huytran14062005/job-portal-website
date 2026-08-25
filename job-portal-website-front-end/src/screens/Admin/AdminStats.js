@@ -53,14 +53,6 @@ const METRICS = [
     type: "company",
   },
   {
-    key: "avg_salary",
-    label: "Mức lương",
-    tableHeader: "Lương trung bình",
-    title: "Công ty theo mức lương trung bình",
-    unit: "công ty",
-    type: "salary",
-  },
-  {
     key: "status",
     label: "Trạng thái duyệt",
     tableHeader: "Trạng thái duyệt",
@@ -68,15 +60,6 @@ const METRICS = [
     unit: "công ty",
     type: "status",
   },
-];
-
-
-const SALARY_BANDS = [
-  { label: "Dưới 10 triệu", test: (v) => v > 0 && v < 10000000 },
-  { label: "10 - 20 triệu", test: (v) => v >= 10000000 && v < 20000000 },
-  { label: "20 - 30 triệu", test: (v) => v >= 20000000 && v < 30000000 },
-  { label: "Từ 30 triệu", test: (v) => v >= 30000000 },
-  { label: "Chưa có dữ liệu lương", test: (v) => !v },
 ];
 
 
@@ -94,19 +77,12 @@ const APPLICATION_STATUS_ORDER = [
 
 
 const STATUS_ORDER = [
-  CompanyStatus.APPROVED,
-  CompanyStatus.PENDING,
-  CompanyStatus.REJECT,
+  CompanyStatus.DA_DUYET,
+  CompanyStatus.CHO_DUYET,
+  CompanyStatus.DA_TU_CHOI,
 ];
 
 const formatNumber = (value) => Number(value || 0).toLocaleString("vi-VN");
-
-const formatSalary = (value) => {
-  if (!value) return "—";
-  return `${(value / 1000000).toLocaleString("vi-VN", {
-    maximumFractionDigits: 1,
-  })} triệu`;
-};
 
 const AdminStats = () => {
   const [companies, setCompanies] = useState([]);
@@ -197,13 +173,6 @@ const AdminStats = () => {
   
   const slices = useMemo(() => {
     if (companies.length === 0) return [];
-
-    if (metric.type === "salary") {
-      return SALARY_BANDS.map((band) => ({
-        label: band.label,
-        value: companies.filter((c) => band.test(c.avg_salary)).length,
-      })).filter((item) => item.value > 0);
-    }
 
     if (metric.type === "status") {
       return STATUS_ORDER.map((status) => ({
@@ -352,7 +321,6 @@ const AdminStats = () => {
 
   
   const renderCellValue = (company) => {
-    if (metric.type === "salary") return formatSalary(company.avg_salary);
     if (metric.type === "status") return company.status || "—";
     return formatNumber(company[metric.key]);
   };

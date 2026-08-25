@@ -1,7 +1,5 @@
-
 from web import db, socketio, user_sockets
 from web.models import Notification, NotificationType, CompanyInfo
-
 
 def create_and_emit_notification(user_id, notification_type, content, related_type=None, related_id=None):
     try:
@@ -17,8 +15,7 @@ def create_and_emit_notification(user_id, notification_type, content, related_ty
         
         db.session.add(notification)
         db.session.commit()
-        
-        
+
         if user_id in user_sockets:
             socket_id = user_sockets[user_id]
             socketio.emit('new_notification', {
@@ -31,15 +28,10 @@ def create_and_emit_notification(user_id, notification_type, content, related_ty
                 'created_at': notification.created_at.isoformat()
             }, room=socket_id)
             
-            print(f"✓ Notification emitted to user {user_id}")
-        else:
-            print(f"✓ Notification saved (user {user_id} offline)")
-        
         return notification
         
-    except Exception as e:
+    except Exception:
         db.session.rollback()
-        print(f"✗ Error creating notification: {e}")
         raise
 
 
@@ -52,10 +44,8 @@ def emit_company_status_changed(user_id, status, approved_at=None):
             'approved_at': approved_at
         }, room=socket_id)
 
-        print(f"✓ Company status ({status}) emitted to user {user_id}")
         return True
 
-    print(f"✓ Company status changed (user {user_id} offline)")
     return False
 
 
@@ -76,7 +66,7 @@ def notify_company_approved(company_id):
 
     return create_and_emit_notification(
         user_id=company_id,
-        notification_type=NotificationType.COMPANY_APPROVED,
+        notification_type=NotificationType.CONG_TY_DUOC_DUYET,
         content=content,
         related_type='company',
         related_id=company_id
@@ -95,7 +85,7 @@ def notify_company_rejected(company_id, reason=None):
 
     return create_and_emit_notification(
         user_id=company_id,
-        notification_type=NotificationType.COMPANY_REJECTED,
+        notification_type=NotificationType.CONG_TY_BI_TU_CHOI,
         content=content,
         related_type='company',
         related_id=company_id

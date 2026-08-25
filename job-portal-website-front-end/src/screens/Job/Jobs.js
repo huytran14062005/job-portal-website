@@ -16,6 +16,7 @@ import { renderStars } from "../../utils/renderStars";
 import { getSavedJobStatusMap } from "./savedJobStatus";
 import { isJobExpired } from "../../utils/jobExpiry";
 import { getApiError } from "../../utils/apiError";
+import { formatSalary } from "../../utils/formatters";
 
 const Jobs = () => {
   const navigate = useNavigate();
@@ -27,7 +28,6 @@ const Jobs = () => {
   const [savedJobs, setSavedJobs] = useState({});
   const [savingJobs, setSavingJobs] = useState({});
 
-  
   const [searchKeyword, setSearchKeyword] = useState("");
   const [minSalary, setMinSalary] = useState("");
   const [maxSalary, setMaxSalary] = useState("");
@@ -36,21 +36,18 @@ const Jobs = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [validationWarning, setValidationWarning] = useState("");
 
-  
   const [locations, setLocations] = useState([]);
   const [jobTypes, setJobTypes] = useState([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
 
-  
   const [pagination, setPagination] = useState({
     page: 1,
     total: 0,
     totalPages: 0,
   });
 
-  
   const debounceTimerRef = useRef(null);
-  
+
   const isFirstRenderRef = useRef(true);
 
   const loadJobs = useCallback(
@@ -91,7 +88,6 @@ const Jobs = () => {
     [user],
   );
 
-  
   useEffect(() => {
     const initialLoad = async () => {
       setLoading(true);
@@ -102,7 +98,6 @@ const Jobs = () => {
     initialLoad();
   }, [loadJobs]);
 
-  
   useEffect(() => {
     const loadOptions = async () => {
       try {
@@ -124,21 +119,17 @@ const Jobs = () => {
     loadOptions();
   }, []);
 
-  
   useEffect(() => {
     if (isFirstRenderRef.current) {
       isFirstRenderRef.current = false;
       return;
     }
 
-    
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
 
-    
     debounceTimerRef.current = setTimeout(() => {
-      
       if (minSalary && maxSalary) {
         const min = parseInt(minSalary);
         const max = parseInt(maxSalary);
@@ -146,31 +137,21 @@ const Jobs = () => {
           setValidationWarning(
             "Mức lương tối thiểu không được lớn hơn mức lương tối đa",
           );
-          return; 
+          return;
         }
       }
 
-      
       setValidationWarning("");
 
-      
       loadJobs(searchKeyword, minSalary, maxSalary, 1, locationId, jobTypeId);
-    }, 500); 
+    }, 500);
 
-    
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
     };
-  }, [
-    searchKeyword,
-    minSalary,
-    maxSalary,
-    locationId,
-    jobTypeId,
-    loadJobs,
-  ]);
+  }, [searchKeyword, minSalary, maxSalary, locationId, jobTypeId, loadJobs]);
 
   const checkSavedJobs = useCallback(async () => {
     if (!user || user.role !== "ungvien" || jobs.length === 0) {
@@ -180,7 +161,10 @@ const Jobs = () => {
 
     try {
       const api = authApis();
-      const savedStatus = await getSavedJobStatusMap(api, jobs.map((job) => job.id));
+      const savedStatus = await getSavedJobStatusMap(
+        api,
+        jobs.map((job) => job.id),
+      );
       setSavedJobs(savedStatus);
     } catch (err) {
       console.error("Error checking saved jobs:", err);
@@ -194,7 +178,6 @@ const Jobs = () => {
   const handleSearch = (e) => {
     e.preventDefault();
 
-    
     if (minSalary && maxSalary) {
       const min = parseInt(minSalary);
       const max = parseInt(maxSalary);
@@ -202,11 +185,10 @@ const Jobs = () => {
         setValidationWarning(
           "Mức lương tối thiểu không được lớn hơn mức lương tối đa",
         );
-        return; 
+        return;
       }
     }
 
-    
     setValidationWarning("");
     loadJobs(searchKeyword, minSalary, maxSalary, 1, locationId, jobTypeId);
   };
@@ -226,22 +208,6 @@ const Jobs = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  
-  const formatSalary = (minSalary, maxSalary) => {
-    if (!minSalary && !maxSalary) return "Thỏa thuận";
-    
-    const formatNumber = (num) => {
-      return num.toLocaleString("vi-VN");
-    };
-
-    if (minSalary && maxSalary) {
-      return `${formatNumber(minSalary)} - ${formatNumber(maxSalary)} VNĐ`;
-    }
-    if (minSalary) return `Từ ${formatNumber(minSalary)} VNĐ`;
-    if (maxSalary) return `Đến ${formatNumber(maxSalary)} VNĐ`;
-    return "Thỏa thuận";
-  };
-
   const handleSaveJob = async (job, e) => {
     e.stopPropagation();
 
@@ -257,15 +223,12 @@ const Jobs = () => {
       return;
     }
 
-    
-    
     setSavingJobs((prev) => ({ ...prev, [jobId]: true }));
 
     try {
       const api = authApis();
       const response = await api.post(endpoints["save-job"](jobId));
 
-      
       setSavedJobs((prev) => ({
         ...prev,
         [jobId]: response.data.is_saved,
@@ -278,9 +241,7 @@ const Jobs = () => {
       }
     } catch (err) {
       console.error("Error saving job:", err);
-      toast.error(
-        getApiError(err, "Có lỗi xảy ra khi lưu công việc!"),
-      );
+      toast.error(getApiError(err, "Có lỗi xảy ra khi lưu công việc!"));
     } finally {
       setSavingJobs((prev) => ({ ...prev, [jobId]: false }));
     }
@@ -302,7 +263,6 @@ const Jobs = () => {
     <div className="jobs-container">
       <h1 className="jobs-title">Danh sách công việc</h1>
 
-      
       <div className="jobs-search-card">
         <form onSubmit={handleSearch} className="jobs-search-form">
           <div className="search-fields-grid">
@@ -381,7 +341,6 @@ const Jobs = () => {
             </div>
           </div>
 
-          
           {validationWarning && (
             <div className="validation-warning">
               <svg
@@ -404,17 +363,6 @@ const Jobs = () => {
 
       {error && <div className="error-message">{error}</div>}
 
-      {pagination.total > 0 && (
-        <div className="jobs-result-count">
-          {pagination.totalPages > 1 && (
-            <span className="jobs-result-page">
-              {" "}
-              <strong>Trang {pagination.page}/{pagination.totalPages}</strong> 
-            </span>
-          )}
-        </div>
-      )}
-
       <div className="jobs-grid">
         {jobs.length > 0 ? (
           jobs.map((job) => (
@@ -429,15 +377,11 @@ const Jobs = () => {
                 Lương: {formatSalary(job.min_salary, job.max_salary)}
               </p>
               <p className="job-deadline">Hạn nộp đơn: {job.deadline}</p>
-              
-              
+
               {job.avg_rating > 0 && (
-                <div className="job-rating">
-                  {renderStars(job.avg_rating)}
-                </div>
+                <div className="job-rating">{renderStars(job.avg_rating)}</div>
               )}
 
-              
               <button
                 className={`job-save-btn ${savedJobs[job.id] ? "saved" : ""} ${
                   !savedJobs[job.id] && isJobExpired(job) ? "expired" : ""
@@ -472,7 +416,6 @@ const Jobs = () => {
         )}
       </div>
 
-      
       <Pagination
         page={pagination.page}
         totalPages={pagination.totalPages}
