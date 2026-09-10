@@ -59,7 +59,7 @@ export const SocketProvider = ({ children }) => {
       if ("Notification" in window && Notification.permission === "granted") {
         new Notification(data.content, {
           body: "",
-          icon: "/logo192.png",
+          icon: `${process.env.PUBLIC_URL}/logo192.png`,
           tag: `notification-${data.id}`,
         });
       }

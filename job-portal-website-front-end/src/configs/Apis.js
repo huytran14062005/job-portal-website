@@ -136,8 +136,8 @@ authenticatedApi.interceptors.response.use(
     } catch (refreshError) {
       clearSession();
 
-      if (window.location.pathname !== "/login") {
-        window.location.assign("/login");
+      if (window.location.hash !== "#/login") {
+        window.location.hash = "#/login";
       }
 
       return Promise.reject(refreshError);

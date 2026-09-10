@@ -69,8 +69,8 @@ const Home = () => {
       <section className="home-hero">
         <video
           className="hero-video"
-          src="/business.mp4"
-          poster="/image_company.jpg"
+          src={`${process.env.PUBLIC_URL}/business.mp4`}
+          poster={`${process.env.PUBLIC_URL}/image_company.jpg`}
           autoPlay
           muted
           loop
@@ -139,7 +139,7 @@ const Home = () => {
           </div>
           <div className="about-image">
             <img
-              src="/job-searching-team.jpg"
+              src={`${process.env.PUBLIC_URL}/job-searching-team.jpg`}
               alt="JobSearching Team"
               className="about-img"
             />

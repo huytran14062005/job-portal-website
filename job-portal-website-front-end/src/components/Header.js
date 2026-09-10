@@ -185,12 +185,12 @@ const Header = () => {
         <div className="header-logo">
           <Link to="/">
             <img
-              src="/logo_web.jpg"
+              src={`${process.env.PUBLIC_URL}/logo_web.jpg`}
               alt="JobSearching - Kết nối sự nghiệp & nhân tài"
               className="logo-image logo-image-default"
             />
             <img
-              src="/logo_web_white.png"
+              src={`${process.env.PUBLIC_URL}/logo_web_white.png`}
               alt=""
               aria-hidden="true"
               className="logo-image logo-image-light"
