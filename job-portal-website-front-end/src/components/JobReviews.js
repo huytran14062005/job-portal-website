@@ -1,11 +1,12 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useCallback } from "react";
 import Apis, { endpoints, authApis } from "../configs/Apis";
 import { useToast } from "./Toast";
 import { MyUserContext } from "../configs/Contexts";
 import MySpinner from "./MySpinner";
 import ConfirmModal from "./ConfirmModal";
+import Pagination from "./Pagination";
 import moment from "moment";
-import "moment/locale/vi"; 
+import "moment/locale/vi";
 import { renderStars } from "../utils/renderStars";
 import { getApiError } from "../utils/apiError";
 import {
@@ -13,9 +14,9 @@ import {
   onApplicantAvatarError,
 } from "../utils/defaultImages";
 
-moment.locale("vi"); 
+moment.locale("vi");
 
-
+const REVIEWS_PER_PAGE = 10;
 
 const JobReviews = ({ jobId }) => {
   const [reviews, setReviews] = useState([]);
@@ -23,61 +24,64 @@ const JobReviews = ({ jobId }) => {
   const [user] = useContext(MyUserContext);
   const toast = useToast();
 
-  
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  
   const [editingReviewId, setEditingReviewId] = useState(null);
 
-  
   const [openMenuId, setOpenMenuId] = useState(null);
 
-  
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [reviewToDelete, setReviewToDelete] = useState(null);
 
-  
   const [myReview, setMyReview] = useState(null);
 
-  
   const [avgRating, setAvgRating] = useState(0);
   const [totalReviews, setTotalReviews] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  useEffect(() => {
-    loadReviews();
-  }, [jobId, user]);
-
-  const loadReviews = async () => {
+  const loadReviews = useCallback(async (page) => {
     try {
       setLoading(true);
-      const response = await Apis.get(endpoints["job-reviews"](jobId));
-      setReviews(response.data.reviews);
-      setAvgRating(response.data.avg_rating);
-      setTotalReviews(response.data.total_reviews);
-      
-      
-      if (user && user.role === "ungvien") {
-        const myReviewFromList = response.data.reviews.find(
-          review => review.candidate_id === user.id
-        );
-        setMyReview(myReviewFromList || null);
-      }
+      const reviewsRequest = Apis.get(endpoints["job-reviews"](jobId), {
+        params: { page, limit: REVIEWS_PER_PAGE },
+      });
+      const myReviewRequest =
+        user?.role === "ungvien"
+          ? authApis().get(endpoints["my-job-review"](jobId))
+          : Promise.resolve(null);
+
+      const [response, myReviewResponse] = await Promise.all([
+        reviewsRequest,
+        myReviewRequest,
+      ]);
+
+      setReviews(response.data.reviews || []);
+      setAvgRating(Number(response.data.avg_rating) || 0);
+      setTotalReviews(response.data.total_reviews || 0);
+      setTotalPages(response.data.total_pages || 1);
+      setMyReview(myReviewResponse?.data.review || null);
     } catch (err) {
       console.error("Error loading reviews:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [jobId, user?.role]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [jobId]);
+
+  useEffect(() => {
+    loadReviews(currentPage);
+  }, [currentPage, loadReviews]);
 
   const handleSubmitReview = async (e) => {
     e.preventDefault();
 
-    
-    
-    
     setSubmitting(true);
 
     try {
@@ -88,22 +92,23 @@ const JobReviews = ({ jobId }) => {
       };
 
       if (editingReviewId) {
-        
         await api.put(endpoints["update-review"](jobId, editingReviewId), data);
         toast.success("Cập nhật đánh giá thành công!");
         setEditingReviewId(null);
       } else {
-        
         await api.post(endpoints["job-reviews"](jobId), data);
         toast.success("Gửi đánh giá thành công!");
       }
 
-      
       setRating(0);
       setComment("");
 
-      
-      await loadReviews();
+      const pageToLoad = editingReviewId ? currentPage : 1;
+      if (pageToLoad === currentPage) {
+        await loadReviews(pageToLoad);
+      } else {
+        setCurrentPage(pageToLoad);
+      }
     } catch (err) {
       toast.error(getApiError(err));
     } finally {
@@ -117,11 +122,11 @@ const JobReviews = ({ jobId }) => {
     setEditingReviewId(review.id);
     setRating(review.rating);
     setComment(review.comment || "");
-    
+
     setTimeout(() => {
-      const formElement = document.querySelector('.review-form-container');
+      const formElement = document.querySelector(".review-form-container");
       if (formElement) {
-        formElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        formElement.scrollIntoView({ behavior: "smooth", block: "center" });
       }
     }, 100);
   };
@@ -146,7 +151,14 @@ const JobReviews = ({ jobId }) => {
       await api.delete(endpoints["delete-review"](jobId, reviewToDelete));
       toast.success("Xóa đánh giá thành công!");
       setMyReview(null);
-      await loadReviews();
+      const nextPage = reviews.length === 1 && currentPage > 1
+        ? currentPage - 1
+        : currentPage;
+      if (nextPage === currentPage) {
+        await loadReviews(nextPage);
+      } else {
+        setCurrentPage(nextPage);
+      }
     } catch (err) {
       toast.error(getApiError(err));
     } finally {
@@ -160,7 +172,6 @@ const JobReviews = ({ jobId }) => {
     setOpenMenuId(openMenuId === reviewId ? null : reviewId);
   };
 
-  
   useEffect(() => {
     const handleClickOutside = () => {
       if (openMenuId) setOpenMenuId(null);
@@ -183,7 +194,7 @@ const JobReviews = ({ jobId }) => {
           onMouseLeave={() => setHoverRating(0)}
         >
           ★
-        </span>
+        </span>,
       );
     }
 
@@ -198,13 +209,12 @@ const JobReviews = ({ jobId }) => {
     if (!review.updated_at || !review.created_at) return false;
     const created = moment(review.created_at);
     const updated = moment(review.updated_at);
-    
-    return updated.diff(created, 'minutes') > 1;
+
+    return updated.diff(created, "minutes") > 1;
   };
 
   return (
     <div className="job-reviews-section">
-      
       <ConfirmModal
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
@@ -229,12 +239,15 @@ const JobReviews = ({ jobId }) => {
         )}
       </div>
 
-      
       {user && user.role === "ungvien" && (!myReview || editingReviewId) && (
         <div className="review-form-container">
           <form onSubmit={handleSubmitReview} className="review-form">
             <div className="form-header">
-              <h3>{editingReviewId ? "Chỉnh sửa đánh giá" : "Công việc này thế nào?"}</h3>
+              <h3>
+                {editingReviewId
+                  ? "Chỉnh sửa đánh giá"
+                  : "Công việc này thế nào?"}
+              </h3>
               {!editingReviewId && totalReviews === 0 && (
                 <p className="first-review-text">
                   Chưa có đánh giá nào. Bạn là người đầu tiên!
@@ -262,7 +275,11 @@ const JobReviews = ({ jobId }) => {
                 className="btn-submit-review"
                 disabled={submitting}
               >
-                {submitting ? "Đang gửi..." : editingReviewId ? "Cập nhật" : "Gửi đánh giá"}
+                {submitting
+                  ? "Đang gửi..."
+                  : editingReviewId
+                    ? "Cập nhật"
+                    : "Gửi đánh giá"}
               </button>
               {editingReviewId && (
                 <button
@@ -278,7 +295,6 @@ const JobReviews = ({ jobId }) => {
         </div>
       )}
 
-      
       <div className="reviews-list">
         {loading ? (
           <div className="loading-reviews">
@@ -299,10 +315,14 @@ const JobReviews = ({ jobId }) => {
                 <div className="review-header">
                   <div className="reviewer-info">
                     <div className="reviewer-name-time">
-                      <span className="reviewer-name">{review.candidate_name}</span>
+                      <span className="reviewer-name">
+                        {review.candidate_name}
+                      </span>
                       <span className="review-date">
                         {formatDate(review.created_at)}
-                        {isEdited(review) && <span className="edited-badge"> · Đã chỉnh sửa</span>}
+                        {isEdited(review) && (
+                          <span className="edited-badge"> · Đã chỉnh sửa</span>
+                        )}
                       </span>
                     </div>
                     <div className="review-rating">
@@ -310,7 +330,6 @@ const JobReviews = ({ jobId }) => {
                     </div>
                   </div>
 
-                  
                   {user && user.id === review.candidate_id && (
                     <div className="review-menu">
                       <button
@@ -325,9 +344,25 @@ const JobReviews = ({ jobId }) => {
                             className="menu-item"
                             onClick={() => handleEditReview(review)}
                           >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                            >
+                              <path
+                                d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              <path
+                                d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
                             </svg>
                             Chỉnh sửa
                           </button>
@@ -335,9 +370,25 @@ const JobReviews = ({ jobId }) => {
                             className="menu-item delete"
                             onClick={() => handleDeleteReview(review.id)}
                           >
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                              <polyline points="3 6 5 6 21 6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                            >
+                              <polyline
+                                points="3 6 5 6 21 6"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
+                              <path
+                                d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              />
                             </svg>
                             Xóa
                           </button>
@@ -359,6 +410,13 @@ const JobReviews = ({ jobId }) => {
           </div>
         )}
       </div>
+
+      <Pagination
+        page={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        disabled={loading}
+      />
     </div>
   );
 };

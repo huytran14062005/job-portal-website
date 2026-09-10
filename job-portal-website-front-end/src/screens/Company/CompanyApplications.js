@@ -32,22 +32,17 @@ const CompanyApplications = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  
   const [companyProfile, setCompanyProfile] = useState(null);
 
-  
   const [selectedJobPost, setSelectedJobPost] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("");
   const [jobPosts, setJobPosts] = useState([]);
 
-  
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [showCvModal, setShowCvModal] = useState(false);
   const [currentCvUrl, setCurrentCvUrl] = useState("");
-  const [currentApplicationId, setCurrentApplicationId] = useState(null);
-  const [downloadingCv, setDownloadingCv] = useState(false);
 
   useEffect(() => {
     if (!showDetailModal && !showCvModal) return undefined;
@@ -60,11 +55,9 @@ const CompanyApplications = () => {
     };
   }, [showDetailModal, showCvModal]);
 
-  
   const [showChatModal, setShowChatModal] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
 
-  
   const [unreadMap, setUnreadMap] = useState({});
   const chatListRef = useRef(null);
 
@@ -73,7 +66,6 @@ const CompanyApplications = () => {
     fetchJobPosts();
   }, []);
 
-  
   useEffect(() => {
     if (!user || user.role !== "nhatuyendung") return;
 
@@ -155,7 +147,10 @@ const CompanyApplications = () => {
     } catch (err) {
       console.error("Error fetching applications:", err);
       setError(
-        getApiError(err, "Không thể tải danh sách đơn ứng tuyển. Vui lòng thử lại sau."),
+        getApiError(
+          err,
+          "Không thể tải danh sách đơn ứng tuyển. Vui lòng thử lại sau.",
+        ),
       );
     } finally {
       setLoading(false);
@@ -184,39 +179,7 @@ const CompanyApplications = () => {
 
   const handleViewCV = (application) => {
     setCurrentCvUrl(application.cv_url);
-    setCurrentApplicationId(application.id);
     setShowCvModal(true);
-  };
-
-  const handleDownloadCv = async () => {
-    if (!currentApplicationId) return;
-
-    try {
-      setDownloadingCv(true);
-      const response = await authApis().get(
-        endpoints["company-application-cv-download"](currentApplicationId),
-        { responseType: "blob" },
-      );
-      const disposition = response.headers["content-disposition"] || "";
-      const encodedName = disposition.match(/filename\*=UTF-8''([^;]+)/i);
-      const plainName = disposition.match(/filename="?([^";]+)"?/i);
-      const fileName = encodedName
-        ? decodeURIComponent(encodedName[1])
-        : plainName?.[1] || "CV.pdf";
-      const url = window.URL.createObjectURL(response.data);
-      const link = document.createElement("a");
-
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      toast.error(getApiError(err, "Không thể tải xuống CV"));
-    } finally {
-      setDownloadingCv(false);
-    }
   };
 
   const handleOpenChat = (candidate) => {
@@ -243,7 +206,7 @@ const CompanyApplications = () => {
   };
 
   const handleFilterChange = (filterType, value) => {
-    setCurrentPage(1); 
+    setCurrentPage(1);
     if (filterType === "job") {
       setSelectedJobPost(value);
     } else if (filterType === "status") {
@@ -261,10 +224,9 @@ const CompanyApplications = () => {
 
       const response = await authApis().get(endpoints["export-applications"], {
         params,
-        responseType: "blob", 
+        responseType: "blob",
       });
 
-      
       const url = window.URL.createObjectURL(new Blob([response.data]));
       const link = document.createElement("a");
       link.href = url;
@@ -278,7 +240,10 @@ const CompanyApplications = () => {
     } catch (err) {
       console.error("Lỗi xuất file:", err);
       toast.error(
-        await getBlobApiError(err, "Lỗi khi xuất file Excel. Vui lòng thử lại."),
+        await getBlobApiError(
+          err,
+          "Lỗi khi xuất file Excel. Vui lòng thử lại.",
+        ),
       );
     }
   };
@@ -308,10 +273,8 @@ const CompanyApplications = () => {
 
   return (
     <div className="ca-page">
-      
       <h1 className="ca-title">Đơn ứng tuyển</h1>
 
-      
       <div className="ca-toolbar">
         <div className="ca-toolbar-filters">
           <SearchableSelect
@@ -377,7 +340,6 @@ const CompanyApplications = () => {
 
       {error && <div className="alert alert-error">{error}</div>}
 
-      
       {applications.length === 0 ? (
         <div className="ca-empty">
           <svg
@@ -505,7 +467,6 @@ const CompanyApplications = () => {
             ))}
           </div>
 
-          
           <Pagination
             page={currentPage}
             totalPages={totalPages}
@@ -515,176 +476,136 @@ const CompanyApplications = () => {
         </>
       )}
 
-      
-      {showCvModal && createPortal(
-        <div className="modal-overlay" onClick={() => setShowCvModal(false)}>
-          <div
-            className="modal-content modal-cv"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-header">
-              <h2>Xem CV</h2>
-              <div className="modal-header-actions">
-                <button
-                  type="button"
-                  className="btn-download-cv"
-                  onClick={handleDownloadCv}
-                  disabled={downloadingCv}
-                  title="Tải xuống CV"
-                >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
+      {showCvModal &&
+        createPortal(
+          <div className="modal-overlay" onClick={() => setShowCvModal(false)}>
+            <div
+              className="modal-content modal-cv"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-header">
+                <h2>Xem CV</h2>
+                <div className="modal-header-actions">
+                  <a
+                    href={currentCvUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="btn-open-cv"
+                    title="Mở trong tab mới"
                   >
-                    <path d="M12 3v12" />
-                    <path d="m7 10 5 5 5-5" />
-                    <path d="M5 21h14" />
-                  </svg>
-                  <span>{downloadingCv ? "Đang tải..." : "Tải xuống"}</span>
-                </button>
-                <a
-                  href={currentCvUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn-download-cv"
-                  title="Mở trong tab mới"
-                >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                    <polyline points="15 3 21 3 21 9" />
-                    <line x1="10" y1="14" x2="21" y2="3" />
-                  </svg>
-                </a>
-                <button
-                  className="modal-close"
-                  onClick={() => setShowCvModal(false)}
-                >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            <div className="cv-viewer-container">
-              <PDFViewer pdfUrl={currentCvUrl} />
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
-
-      
-      {showDetailModal && createPortal(
-        <div
-          className="modal-overlay"
-          onClick={() => setShowDetailModal(false)}
-        >
-          <div
-            className="modal-content modal-large ad-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="modal-header ad-header">
-              <h2>Chi tiết đơn ứng tuyển</h2>
-
-              <div className="ad-header-right">
-                {selectedApplication && !detailLoading && (
-                  <div className="ad-status-block">
-                    <span
-                      className={`ad-status ${getStatusBadgeClass(selectedApplication.status)}`}
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
                     >
-                      {selectedApplication.status}
-                    </span>
-                    <span className="ad-status-date">
-                      Nộp ngày {formatDateOnly(selectedApplication.applied_at)}
-                    </span>
-                  </div>
-                )}
-
-                <button
-                  className="modal-close"
-                  onClick={() => setShowDetailModal(false)}
-                >
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                  </a>
+                  <button
+                    className="modal-close"
+                    onClick={() => setShowCvModal(false)}
                   >
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div className="cv-viewer-container">
+                <PDFViewer pdfUrl={currentCvUrl} />
               </div>
             </div>
+          </div>,
+          document.body,
+        )}
 
-            {detailLoading ? (
-              <div className="modal-loading">
-                <div className="spinner"></div>
-                <p>Đang tải...</p>
-              </div>
-            ) : selectedApplication ? (
-              <div className="modal-body ad-body">
-                
-                <div className="ad-hero">
-                  <img
-                    src={getApplicantAvatar(
-                      selectedApplication.candidate.avatar_url
-                    )}
-                    alt={selectedApplication.candidate.full_name}
-                    className="ad-hero-avatar"
-                    onError={onApplicantAvatarError}
-                  />
+      {showDetailModal &&
+        createPortal(
+          <div
+            className="modal-overlay"
+            onClick={() => setShowDetailModal(false)}
+          >
+            <div
+              className="modal-content modal-large ad-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-header ad-header">
+                <h2>Chi tiết đơn ứng tuyển</h2>
 
-                  <div className="ad-hero-info">
-                    <h3 className="ad-hero-name">
-                      {selectedApplication.candidate.full_name ||
-                        "Chưa cập nhật"}
-                    </h3>
-
-                    <div className="ad-hero-contact">
-                      <a
-                        href={`mailto:${selectedApplication.candidate.email}`}
-                        className="ad-chip"
+                <div className="ad-header-right">
+                  {selectedApplication && !detailLoading && (
+                    <div className="ad-status-block">
+                      <span
+                        className={`ad-status ${getStatusBadgeClass(selectedApplication.status)}`}
                       >
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                          <polyline points="22,6 12,13 2,6" />
-                        </svg>
-                        {selectedApplication.candidate.email}
-                      </a>
+                        {selectedApplication.status}
+                      </span>
+                      <span className="ad-status-date">
+                        Nộp ngày{" "}
+                        {formatDateOnly(selectedApplication.applied_at)}
+                      </span>
+                    </div>
+                  )}
 
-                      {selectedApplication.candidate.phone && (
+                  <button
+                    className="modal-close"
+                    onClick={() => setShowDetailModal(false)}
+                  >
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              {detailLoading ? (
+                <div className="modal-loading">
+                  <div className="spinner"></div>
+                  <p>Đang tải...</p>
+                </div>
+              ) : selectedApplication ? (
+                <div className="modal-body ad-body">
+                  <div className="ad-hero">
+                    <img
+                      src={getApplicantAvatar(
+                        selectedApplication.candidate.avatar_url,
+                      )}
+                      alt={selectedApplication.candidate.full_name}
+                      className="ad-hero-avatar"
+                      onError={onApplicantAvatarError}
+                    />
+
+                    <div className="ad-hero-info">
+                      <h3 className="ad-hero-name">
+                        {selectedApplication.candidate.full_name ||
+                          "Chưa cập nhật"}
+                      </h3>
+
+                      <div className="ad-hero-contact">
                         <a
-                          href={`tel:${selectedApplication.candidate.phone}`}
+                          href={`mailto:${selectedApplication.candidate.email}`}
                           className="ad-chip"
                         >
                           <svg
@@ -695,134 +616,149 @@ const CompanyApplications = () => {
                             stroke="currentColor"
                             strokeWidth="2"
                           >
-                            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                            <polyline points="22,6 12,13 2,6" />
                           </svg>
-                          {selectedApplication.candidate.phone}
+                          {selectedApplication.candidate.email}
                         </a>
-                      )}
-                    </div>
-                  </div>
-                </div>
 
-                
-                <div className="ad-columns">
-                  <div className="ad-col">
-                    <div className="ad-field">
-                      <span className="ad-item-label">Ngày sinh</span>
-                      <span className="ad-item-value">
-                        {selectedApplication.candidate.date_of_birth || "—"}
-                      </span>
-                    </div>
-                    <div className="ad-field">
-                      <span className="ad-item-label">Giới tính</span>
-                      <span className="ad-item-value">
-                        {selectedApplication.candidate.gender || "—"}
-                      </span>
-                    </div>
-                    <div className="ad-field">
-                      <span className="ad-item-label">Địa chỉ</span>
-                      <span className="ad-item-value">
-                        {selectedApplication.candidate.address || "—"}
-                      </span>
-                    </div>
-                  </div>
-
-                  
-                  <div className="ad-col ad-job">
-                    <span className="ad-item-label">Vị trí ứng tuyển</span>
-                    <h4 className="ad-job-title">
-                      {selectedApplication.job_post.title}
-                    </h4>
-                    <div className="ad-job-meta">
-                      {(selectedApplication.job_post.min_salary ||
-                        selectedApplication.job_post.max_salary) && (
-                        <div className="ad-field">
-                          <span className="ad-item-label">Lương</span>
-                          <span className="ad-item-value ad-item-value-salary">
-                            {formatSalary(
-                              selectedApplication.job_post.min_salary,
-                              selectedApplication.job_post.max_salary,
-                            )}
-                          </span>
-                        </div>
-                      )}
-                      <div className="ad-field">
-                        <span className="ad-item-label">Hạn nộp</span>
-                        <span className="ad-item-value">
-                          {selectedApplication.job_post.deadline}
-                        </span>
+                        {selectedApplication.candidate.phone && (
+                          <a
+                            href={`tel:${selectedApplication.candidate.phone}`}
+                            className="ad-chip"
+                          >
+                            <svg
+                              width="14"
+                              height="14"
+                              viewBox="0 0 24 24"
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                            >
+                              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
+                            </svg>
+                            {selectedApplication.candidate.phone}
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>
-                </div>
 
-                {selectedApplication.candidate.description && (
-                  <fieldset className="ad-about">
-                    <legend className="ad-item-label">Giới thiệu</legend>
-                    <p>{selectedApplication.candidate.description}</p>
-                  </fieldset>
+                  <div className="ad-columns">
+                    <div className="ad-col">
+                      <div className="ad-field">
+                        <span className="ad-item-label">Ngày sinh</span>
+                        <span className="ad-item-value">
+                          {selectedApplication.candidate.date_of_birth || "—"}
+                        </span>
+                      </div>
+                      <div className="ad-field">
+                        <span className="ad-item-label">Giới tính</span>
+                        <span className="ad-item-value">
+                          {selectedApplication.candidate.gender || "—"}
+                        </span>
+                      </div>
+                      <div className="ad-field">
+                        <span className="ad-item-label">Địa chỉ</span>
+                        <span className="ad-item-value">
+                          {selectedApplication.candidate.address || "—"}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="ad-col ad-job">
+                      <span className="ad-item-label">Vị trí ứng tuyển</span>
+                      <h4 className="ad-job-title">
+                        {selectedApplication.job_post.title}
+                      </h4>
+                      <div className="ad-job-meta">
+                        {(selectedApplication.job_post.min_salary ||
+                          selectedApplication.job_post.max_salary) && (
+                          <div className="ad-field">
+                            <span className="ad-item-label">Lương</span>
+                            <span className="ad-item-value ad-item-value-salary">
+                              {formatSalary(
+                                selectedApplication.job_post.min_salary,
+                                selectedApplication.job_post.max_salary,
+                              )}
+                            </span>
+                          </div>
+                        )}
+                        <div className="ad-field">
+                          <span className="ad-item-label">Hạn nộp</span>
+                          <span className="ad-item-value">
+                            {selectedApplication.job_post.deadline}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedApplication.candidate.description && (
+                    <fieldset className="ad-about">
+                      <legend className="ad-item-label">Giới thiệu</legend>
+                      <p>{selectedApplication.candidate.description}</p>
+                    </fieldset>
+                  )}
+                </div>
+              ) : null}
+
+              {!detailLoading &&
+                selectedApplication &&
+                selectedApplication.status === ApplicationStatus.DA_NOP && (
+                  <div className="ad-footer">
+                    <button
+                      className="btn-reject"
+                      onClick={() =>
+                        handleUpdateStatus(
+                          selectedApplication.id,
+                          ApplicationStatus.TU_CHOI,
+                        )
+                      }
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="15" y1="9" x2="9" y2="15" />
+                        <line x1="9" y1="9" x2="15" y2="15" />
+                      </svg>
+                      Từ chối
+                    </button>
+                    <button
+                      className="btn-approve"
+                      onClick={() =>
+                        handleUpdateStatus(
+                          selectedApplication.id,
+                          ApplicationStatus.DA_DUYET,
+                        )
+                      }
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                      </svg>
+                      Duyệt đơn
+                    </button>
+                  </div>
                 )}
-              </div>
-            ) : null}
+            </div>
+          </div>,
+          document.body,
+        )}
 
-            
-            {!detailLoading &&
-              selectedApplication &&
-              selectedApplication.status === ApplicationStatus.DA_NOP && (
-                <div className="ad-footer">
-                  <button
-                    className="btn-reject"
-                    onClick={() =>
-                      handleUpdateStatus(
-                        selectedApplication.id,
-                        ApplicationStatus.TU_CHOI,
-                      )
-                    }
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <circle cx="12" cy="12" r="10" />
-                      <line x1="15" y1="9" x2="9" y2="15" />
-                      <line x1="9" y1="9" x2="15" y2="15" />
-                    </svg>
-                    Từ chối
-                  </button>
-                  <button
-                    className="btn-approve"
-                    onClick={() =>
-                      handleUpdateStatus(
-                        selectedApplication.id,
-                        ApplicationStatus.DA_DUYET,
-                      )
-                    }
-                  >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                      <polyline points="22 4 12 14.01 9 11.01" />
-                    </svg>
-                    Duyệt đơn
-                  </button>
-                </div>
-              )}
-          </div>
-        </div>,
-        document.body,
-      )}
-
-      
       {showChatModal && selectedCandidate && companyProfile && (
         <ChatModal
           isOpen={showChatModal}

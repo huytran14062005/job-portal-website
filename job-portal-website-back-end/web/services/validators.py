@@ -33,7 +33,7 @@ class Limits:
 
     
     CV_NAME_MAX = 255
-    CV_ALLOWED_EXTENSIONS = ('pdf', 'doc', 'docx')
+    CV_ALLOWED_EXTENSIONS = ('pdf', 'docx')
     CV_MAX_SIZE_MB = 5
     CV_MAX_SIZE_BYTES = CV_MAX_SIZE_MB * 1024 * 1024
 

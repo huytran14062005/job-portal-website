@@ -2,10 +2,12 @@
 import io
 import json
 import os
+from datetime import date
 from pathlib import Path
 
 import requests
-from web.models import CompanyStatus, CVFile, JobPost
+from web.models import CompanyStatus, CVFile, JobPost, PostStatus
+from web.services.exceptions import NotFoundError, ValidationError
 
 
 GEMINI_GENERATE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
@@ -18,9 +20,7 @@ def _extract_pdf_text(content):
     except ImportError as ex:
         raise RuntimeError(
             "Thiếu thư viện đọc PDF. Hãy chạy: pip install pypdf"
-        ) from ex
-
-    
+        ) from ex    
     
     reader = PdfReader(io.BytesIO(content), strict=False)
     return "\n".join((page.extract_text() or "") for page in reader.pages)
@@ -50,6 +50,7 @@ def extract_cv_text(cv):
     except Exception as ex:
         raise ValueError(f"Không thể tải CV từ URL: {str(ex)}")
 
+    # lay phan duoi file
     extension = Path(cv.file_name or cv.cv_url).suffix.lower()
     if extension == ".pdf":
         text = _extract_pdf_text(response.content)
@@ -95,8 +96,6 @@ def _parse_json_result(output_text):
 
 def _call_gemini(job_text, cv_text):
     api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise RuntimeError("Chưa cấu hình GEMINI_API_KEY trong backend .env")
 
     model = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
     instructions = """
@@ -232,13 +231,7 @@ CV:
     except (KeyError, IndexError, TypeError) as ex:
         raise RuntimeError("Gemini không trả về kết quả đánh giá.") from ex
 
-    output_text = output_text.strip()
-    if output_text.startswith("```json"):
-        output_text = output_text[7:]
-    if output_text.endswith("```"):
-        output_text = output_text[:-3]
-    output_text = output_text.strip()
-    if not output_text:
+    if not output_text.strip():
         raise RuntimeError("Gemini không trả về kết quả đánh giá.")
 
     try:
@@ -326,14 +319,21 @@ def _normalize_result(result):
 
 
 def match_cv_to_job(job_id, cv_id, candidate_id):
-    from web.services.exceptions import NotFoundError
-
     job = JobPost.query.get(job_id)
     if not job:
         raise NotFoundError("Công việc không tồn tại.")
 
     if not job.company or job.company.status != CompanyStatus.DA_DUYET:
-        raise NotFoundError("Công việc không tồn tại.")
+        raise NotFoundError("Công ty không tồn tại hoặc chưa được duyệt.")
+
+    if (
+        job.status == PostStatus.HET_HAN
+        or (job.deadline and job.deadline < date.today())
+    ):
+        raise ValidationError("Công việc đã hết hạn nên không thể đánh giá CV bằng AI.")
+
+    if job.status != PostStatus.HOAT_DONG:
+        raise ValidationError("Công việc đang bị ẩn nên không thể đánh giá CV bằng AI.")
 
     cv = CVFile.query.filter_by(id=cv_id, candidate_id=candidate_id).first()
     if not cv:

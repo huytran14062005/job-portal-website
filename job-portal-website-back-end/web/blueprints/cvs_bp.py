@@ -1,7 +1,6 @@
 import math
-from io import BytesIO
 
-from flask import Blueprint, jsonify, request, send_file
+from flask import Blueprint, jsonify, request
 
 from web import app
 from web.blueprints.api_errors import handle_api_errors
@@ -9,9 +8,7 @@ from web.middleware.auth_middleware import verify_role, verify_token
 from web.models import UserRole
 from web.services.cv_service import (
     delete_cvs_service,
-    download_cv_service,
     get_cv_list_service,
-    get_own_cv,
     update_cv_name_service,
     upload_cv_service,
 )
@@ -64,22 +61,6 @@ def get_cvs():
         "pages": pages,
         "current_page": page
     }), 200
-
-
-@cvs_bp.route('/<int:cv_id>/download', methods=['GET'])
-@verify_token
-@verify_role(UserRole.UNGVIEN)
-@handle_api_errors
-def download_cv(cv_id):
-    cv_file = get_own_cv(cv_id, request.user_id)
-    content, mimetype, filename = download_cv_service(cv_file)
-
-    return send_file(
-        BytesIO(content),
-        mimetype=mimetype or 'application/octet-stream',
-        as_attachment=True,
-        download_name=filename,
-    )
 
 
 @cvs_bp.route('/<int:cv_id>', methods=['PUT'])

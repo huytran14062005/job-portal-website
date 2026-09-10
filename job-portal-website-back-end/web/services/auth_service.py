@@ -51,10 +51,6 @@ def parse_register_role(role_value):
     return role
 
 
-
-
-
-
 def register_service(username, email, password, confirm, role):
     validate_required_fields(username=username, email=email, password=password,
                              confirm=confirm, role=role)

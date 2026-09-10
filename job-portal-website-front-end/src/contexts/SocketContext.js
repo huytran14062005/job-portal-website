@@ -16,12 +16,11 @@ export const SocketProvider = ({ children }) => {
   const [user] = useContext(MyUserContext);
   const [socket, setSocket] = useState(null);
   const [connected, setConnected] = useState(false);
-  
+
   const [companyStatusUpdate, setCompanyStatusUpdate] = useState(null);
 
   useEffect(() => {
     if (!user) {
-      
       if (socket) {
         socket.disconnect();
         setSocket(null);
@@ -31,8 +30,9 @@ export const SocketProvider = ({ children }) => {
       return;
     }
 
-    
-    const SOCKET_URL = process.env.REACT_APP_API_URL?.replace('/api', '') || "http://localhost:5000";
+    const SOCKET_URL =
+      process.env.REACT_APP_API_URL?.replace("/api", "") ||
+      "http://localhost:5000";
     const newSocket = io(SOCKET_URL, {
       transports: ["websocket", "polling"],
       reconnection: true,
@@ -43,8 +43,6 @@ export const SocketProvider = ({ children }) => {
 
     newSocket.on("connect", () => {
       setConnected(true);
-
-      
       newSocket.emit("register", user.id);
     });
 
@@ -53,13 +51,11 @@ export const SocketProvider = ({ children }) => {
     });
 
     newSocket.on("connect_error", (error) => {
-      console.error("✗ Socket.IO connection error:", error);
+      console.error("Socket.IO connection error:", error);
       setConnected(false);
     });
 
-    
     newSocket.on("new_notification", (data) => {
-      
       if ("Notification" in window && Notification.permission === "granted") {
         new Notification(data.content, {
           body: "",
@@ -69,27 +65,31 @@ export const SocketProvider = ({ children }) => {
       }
     });
 
-    
     newSocket.on("company_status_changed", (data) => {
       setCompanyStatusUpdate({ ...data, receivedAt: Date.now() });
     });
 
     setSocket(newSocket);
 
-    
     return () => {
       newSocket.disconnect();
     };
   }, [user]);
 
-  
   useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {
       Notification.requestPermission();
     }
   }, []);
 
-  const emitNewMessageSent = (recipientId, senderName, senderRole, companyName, message, companyId = null) => {
+  const emitNewMessageSent = (
+    recipientId,
+    senderName,
+    senderRole,
+    companyName,
+    message,
+    companyId = null,
+  ) => {
     if (socket && connected) {
       socket.emit("new_message_sent", {
         recipient_id: recipientId,

@@ -3,7 +3,8 @@ from datetime import date
 from web import app, dao
 from web.models import (Application, ApplicantInfo, ApplicationStatus, CompanyStatus,
                         NotificationType, PostStatus)
-from web.services.exceptions import NotFoundError, PermissionDeniedError, ValidationError
+from web.services.exceptions import (ConflictError, NotFoundError,
+                                     PermissionDeniedError, ValidationError)
 from web.services.validators import parse_enum, parse_enum_optional
 
 
@@ -38,15 +39,11 @@ def get_reapply_info(application, job_status=None, job_deadline=None, company_st
     if application.status == ApplicationStatus.DA_NOP:
         info["reason"] = "Đơn ứng tuyển của bạn đang chờ nhà tuyển dụng duyệt"
         return info
-
     
     if application.status == ApplicationStatus.DA_DUYET:
         info["reason"] = "Chúc mừng, đơn ứng tuyển của bạn đã được duyệt"
         return info
 
-    
-
-    
     if company_status is not None and company_status != CompanyStatus.DA_DUYET:
         info["reason"] = "Công việc này hiện không nhận hồ sơ"
         return info
@@ -107,9 +104,6 @@ def get_apply_state_service(candidate_id, job_id):
 
 
 
-
-
-
 def apply_job_service(candidate_id, job_post_id, cv_file=None, cv_file_id=None):
     from web.models import JobPost
     from web.services.cv_service import get_own_cv, upload_cv_service
@@ -118,10 +112,6 @@ def apply_job_service(candidate_id, job_post_id, cv_file=None, cv_file_id=None):
     job_post = JobPost.query.get(job_post_id)
     if not job_post:
         raise NotFoundError("Công việc không tồn tại")
-
-    
-    if job_post.status == PostStatus.HET_HAN:
-        raise ValidationError("Công việc này đã hết hạn nhận hồ sơ")
 
     if job_post.status != PostStatus.HOAT_DONG:
         raise ValidationError("Công việc này không còn hoạt động")
@@ -194,14 +184,21 @@ def update_application_status_service(application_id, company_id, status_value):
     if not job_post or job_post.company_id != company_id:
         raise PermissionDeniedError("Bạn không có quyền cập nhật đơn ứng tuyển của công ty khác")
 
-    
-    
-    if application.status == ApplicationStatus.DA_DUYET and new_status != ApplicationStatus.DA_DUYET:
+    allowed_statuses = {
+        ApplicationStatus.DA_DUYET,
+        ApplicationStatus.TU_CHOI,
+    }
+    if new_status not in allowed_statuses:
+        raise ValidationError('Chỉ có thể chuyển đơn sang trạng thái "đã duyệt" hoặc "từ chối"')
+
+    if application.status == new_status:
+        raise ConflictError(f'Đơn ứng tuyển đang ở trạng thái "{new_status.value}"')
+
+    if application.status != ApplicationStatus.DA_NOP:
         raise ValidationError(
-            "Đơn ứng tuyển đã được duyệt nên không thể đổi sang trạng thái khác"
+            f'Đơn ứng tuyển đã ở trạng thái "{application.status.value}" nên không thể thay đổi'
         )
 
-    
     application = dao.update_application_status(application, new_status)
 
     _notify_candidate_status_changed(application, new_status)

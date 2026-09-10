@@ -9,33 +9,58 @@ from web.models import UserRole
 from web.services.job_review_service import (
     create_review_service,
     delete_review_service,
+    get_own_review_service,
     get_reviews_service,
     update_review_service,
 )
+from web.services.validators import parse_page, parse_per_page
 from web.utils.public_cache import invalidate_public_cache
 
 job_reviews_bp = Blueprint('job_reviews', __name__, url_prefix='/api/jobs')
+
+
+def _review_to_dict(review):
+    return {
+        'id': review.id,
+        'rating': review.rating,
+        'comment': review.comment,
+        'created_at': review.created_at.isoformat() if review.created_at else None,
+        'updated_at': review.updated_at.isoformat() if review.updated_at else None,
+        'candidate_id': review.candidate_id,
+        'candidate_name': review.candidate.full_name if review.candidate else None,
+        'candidate_avatar': review.candidate.avatar_url if review.candidate else None,
+    }
 
 
 @job_reviews_bp.route('/<int:job_id>/reviews', methods=['GET'])
 @cache.cached(timeout=60, query_string=True)
 @handle_api_errors
 def get_job_reviews(job_id):
-    page = int(request.args.get('page', 1))
-    limit = int(request.args.get('limit', 10))
+    page = parse_page(request.args.get('page'))
+    limit = parse_per_page(request.args.get('limit'), default=10)
 
-    reviews, total, avg_rating, total_reviews = get_reviews_service(
+    reviews, total_reviews, avg_rating = get_reviews_service(
         job_post_id=job_id, page=page, limit=limit
     )
 
     return jsonify({
         'reviews': reviews,
-        'total': total,
         'page': page,
         'limit': limit,
-        'total_pages': math.ceil(total / limit) if limit > 0 else 1,
+        'total_pages': math.ceil(total_reviews / limit) if limit > 0 else 1,
         'avg_rating': avg_rating,
         'total_reviews': total_reviews
+    }), 200
+
+
+@job_reviews_bp.route('/<int:job_id>/reviews/mine', methods=['GET'])
+@verify_token
+@verify_role(UserRole.UNGVIEN)
+@handle_api_errors
+def get_own_job_review(job_id):
+    review = get_own_review_service(request.user_id, job_id)
+    return jsonify({
+        'review': _review_to_dict(review) if review else None
     }), 200
 
 
@@ -76,6 +101,7 @@ def update_job_review(job_id, review_id):
     review = update_review_service(
         review_id=review_id,
         candidate_id=request.user_id,
+        job_post_id=job_id,
         rating=data.get('rating'),
         comment=data.get('comment')
     )
@@ -97,7 +123,11 @@ def update_job_review(job_id, review_id):
 @verify_role(UserRole.UNGVIEN)
 @handle_api_errors
 def delete_job_review(job_id, review_id):
-    delete_review_service(review_id=review_id, candidate_id=request.user_id)
+    delete_review_service(
+        review_id=review_id,
+        candidate_id=request.user_id,
+        job_post_id=job_id
+    )
     invalidate_public_cache()
 
     return jsonify({"message": "Xóa đánh giá thành công!"}), 200

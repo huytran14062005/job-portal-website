@@ -1,6 +1,4 @@
-from io import BytesIO
-
-from flask import Blueprint, jsonify, request, send_file
+from flask import Blueprint, jsonify, request
 
 from web import app, dao
 from web.blueprints.api_errors import handle_api_errors
@@ -11,7 +9,6 @@ from web.services.application_service import (
     parse_application_status_filter,
     update_application_status_service,
 )
-from web.services.cv_service import download_cv_service
 from web.utils.pagination import build_pagination
 
 company_applications_bp = Blueprint('company_applications', __name__,
@@ -113,23 +110,6 @@ def get_application_detail(application_id):
         "applied_at": application.applied_at.strftime('%d-%m-%Y %H:%M:%S'),
         "apply_count": application.apply_count or 1
     }), 200
-
-
-@company_applications_bp.route('/<int:application_id>/cv/download', methods=['GET'])
-@verify_token
-@verify_role(UserRole.NHATUYENDUNG)
-@verify_company_approved
-@handle_api_errors
-def download_application_cv(application_id):
-    application = get_application_detail_service(application_id, request.user_id)
-    content, mimetype, filename = download_cv_service(application.cv_file)
-
-    return send_file(
-        BytesIO(content),
-        mimetype=mimetype or 'application/octet-stream',
-        as_attachment=True,
-        download_name=filename,
-    )
 
 
 @company_applications_bp.route('/<int:application_id>/status', methods=['PUT'])

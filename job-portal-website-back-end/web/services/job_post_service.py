@@ -3,6 +3,7 @@ from web.models import PostStatus
 from web.services.exceptions import NotFoundError, PermissionDeniedError, ValidationError
 from web.services.validators import (
     Limits,
+    optional_text,
     parse_enum,
     require_date,
     require_future_date,
@@ -43,6 +44,8 @@ def _validate_job_type(job_type_id):
 def _validate_job_post_input(data, deadline_must_be_future):
     title = require_text(data.get('title'), "Tiêu đề công việc", Limits.JOB_TITLE_MAX)
     description = require_text(data.get('description'), "Mô tả công việc")
+    requirements = optional_text(data.get('requirements'), "Yêu cầu ứng viên")
+    benefits = optional_text(data.get('benefits'), "Quyền lợi ứng viên")
     min_salary, max_salary = validate_salary_range(data.get('min_salary'), data.get('max_salary'))
 
     if deadline_must_be_future:
@@ -53,6 +56,8 @@ def _validate_job_post_input(data, deadline_must_be_future):
     return {
         'title': title,
         'description': description,
+        'requirements': requirements,
+        'benefits': benefits,
         'min_salary': min_salary,
         'max_salary': max_salary,
         'deadline': deadline,
@@ -102,6 +107,8 @@ def update_job_post_service(job_id, company_id, data):
     merged = {
         'title': data.get('title') or job_post.title,
         'description': data.get('description') or job_post.description,
+        'requirements': data.get('requirements', job_post.requirements),
+        'benefits': data.get('benefits', job_post.benefits),
         'min_salary': data.get('min_salary', job_post.min_salary),
         'max_salary': data.get('max_salary', job_post.max_salary),
         'deadline': data.get('deadline') or job_post.deadline,

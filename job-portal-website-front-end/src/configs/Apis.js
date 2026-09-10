@@ -39,10 +39,7 @@ export const endpoints = {
     `/company/applications/${applicationId}`,
   "company-application-status": (applicationId) =>
     `/company/applications/${applicationId}/status`,
-  "company-application-cv-download": (applicationId) =>
-    `/company/applications/${applicationId}/cv/download`,
   cvs: "/cvs",
-  "cv-download": (cvId) => `/cvs/${cvId}/download`,
   "cv-rename": (cvId) => `/cvs/${cvId}`,
   "cv-delete-bulk": "/cvs",
   notifications: "/notifications",
@@ -67,6 +64,7 @@ export const endpoints = {
   "admin-stats-companies": "/admin/stats/companies",
   "admin-stats-users": "/admin/stats/users",
   "job-reviews": (jobId) => `/jobs/${jobId}/reviews`,
+  "my-job-review": (jobId) => `/jobs/${jobId}/reviews/mine`,
   "update-review": (jobId, reviewId) => `/jobs/${jobId}/reviews/${reviewId}`,
   "delete-review": (jobId, reviewId) => `/jobs/${jobId}/reviews/${reviewId}`,
   "follow-company": (companyId) => `/companies/${companyId}/follow`,

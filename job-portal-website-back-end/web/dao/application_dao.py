@@ -92,10 +92,9 @@ def update_application_status(application, new_status):
     application.status = new_status
 
 
-    if new_status == ApplicationStatus.TU_CHOI:
-        application.rejected_at = datetime.now()
-
-
+    application.rejected_at = (
+        datetime.now() if new_status == ApplicationStatus.TU_CHOI else None
+    )
 
     try:
         db.session.commit()

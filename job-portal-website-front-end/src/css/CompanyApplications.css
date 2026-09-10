@@ -439,7 +439,7 @@
   gap: 8px;
 }
 
-.btn-download-cv {
+.btn-open-cv {
   background: none;
   border: none;
   padding: 8px;
@@ -455,13 +455,8 @@
   font-weight: 600;
 }
 
-.btn-download-cv:hover {
+.btn-open-cv:hover {
   background: #eff6ff;
-}
-
-.btn-download-cv:disabled {
-  cursor: not-allowed;
-  opacity: 0.65;
 }
 
 .modal-close {

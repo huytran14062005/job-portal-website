@@ -229,6 +229,7 @@ const MyApplications = () => {
         jobId={reapplyTarget?.job_post_id}
         jobTitle={reapplyTarget?.job_title}
         companyName={reapplyTarget?.company_name}
+        applyInfo={reapplyTarget}
         onSuccess={handleReapplySuccess}
       />
 

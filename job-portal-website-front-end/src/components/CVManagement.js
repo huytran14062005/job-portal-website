@@ -13,7 +13,6 @@ const CVManagement = () => {
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [downloadingCv, setDownloadingCv] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -188,41 +187,11 @@ const CVManagement = () => {
 
   const handlePreviewCv = (cv) => {
     if (!cv.cv_url) {
-      setError("Kh\u00f4ng t\u00ecm th\u1ea5y file cho CV n\u00e0y");
+      setError("Khong tim thay file cho CV nay");
       return;
     }
 
     setPreviewCv(cv);
-  };
-
-  const handleDownloadCv = async () => {
-    if (!previewCv) return;
-
-    try {
-      setDownloadingCv(true);
-      const response = await authApis().get(endpoints["cv-download"](previewCv.id), {
-        responseType: "blob",
-      });
-      const disposition = response.headers["content-disposition"] || "";
-      const encodedName = disposition.match(/filename\*=UTF-8''([^;]+)/i);
-      const plainName = disposition.match(/filename="?([^";]+)"?/i);
-      const fileName = encodedName
-        ? decodeURIComponent(encodedName[1])
-        : plainName?.[1] || "CV.pdf";
-      const url = window.URL.createObjectURL(response.data);
-      const link = document.createElement("a");
-
-      link.href = url;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      setError(getApiError(err, "Không thể tải xuống CV"));
-    } finally {
-      setDownloadingCv(false);
-    }
   };
 
   const handleSelectCv = (cvId) => {
@@ -710,67 +679,85 @@ const CVManagement = () => {
         disabled={searching}
       />
 
-      {previewCv && createPortal(
-        <div
-          className="modal-overlay cv-preview-overlay"
-          onClick={() => setPreviewCv(null)}
-        >
+      {previewCv &&
+        createPortal(
           <div
-            className="cv-preview-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-label={`Xem CV ${previewCv.name || previewCv.file_name}`}
-            onClick={(e) => e.stopPropagation()}
+            className="modal-overlay cv-preview-overlay"
+            onClick={() => setPreviewCv(null)}
           >
-            <div className="modal-header cv-preview-header">
-              <h2>Xem CV</h2>
-              <div className="cv-preview-header-actions">
-                <button
-                  type="button"
-                  className="cv-preview-download-button"
-                  onClick={handleDownloadCv}
-                  disabled={downloadingCv}
-                >
-                  <svg
-                    width="18"
-                    height="18"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
+            <div
+              className="cv-preview-modal"
+              role="dialog"
+              aria-modal="true"
+              aria-label={`Xem CV ${previewCv.name || previewCv.file_name}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-header cv-preview-header">
+                <h2>Xem CV</h2>
+                <div className="cv-preview-header-actions">
+                  <a
+                    href={previewCv.cv_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="cv-preview-open-link"
+                    title="M\u1edf trong tab m\u1edbi"
+                    aria-label="M\u1edf CV trong tab m\u1edbi"
                   >
-                    <path d="M12 3v12" />
-                    <path d="m7 10 5 5 5-5" />
-                    <path d="M5 21h14" />
-                  </svg>
-                  {downloadingCv ? "Đang tải..." : "Tải xuống"}
-                </button>
-                <a
-                  href={previewCv.cv_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="cv-preview-open-link"
-                  title="M\u1edf trong tab m\u1edbi"
-                  aria-label="M\u1edf CV trong tab m\u1edbi"
-                >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    >
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                  </a>
+                  <button
+                    type="button"
+                    className="modal-close"
+                    onClick={() => setPreviewCv(null)}
+                    aria-label="\u0110\u00f3ng xem CV"
                   >
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                    <polyline points="15 3 21 3 21 9" />
-                    <line x1="10" y1="14" x2="21" y2="3" />
-                  </svg>
-                </a>
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <line x1="18" y1="6" x2="6" y2="18" strokeWidth="2" />
+                      <line x1="6" y1="6" x2="18" y2="18" strokeWidth="2" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div className="cv-preview-viewer">
+                <PDFViewer pdfUrl={previewCv.cv_url} />
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
+
+      {showUploadModal &&
+        createPortal(
+          <div
+            className="modal-overlay"
+            onClick={() => setShowUploadModal(false)}
+          >
+            <div
+              className="cv-upload-modal"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="modal-header">
+                <h2>Tải CV mới</h2>
                 <button
-                  type="button"
                   className="modal-close"
-                  onClick={() => setPreviewCv(null)}
-                  aria-label="\u0110\u00f3ng xem CV"
+                  onClick={() => setShowUploadModal(false)}
                 >
                   <svg
                     width="24"
@@ -784,87 +771,148 @@ const CVManagement = () => {
                   </svg>
                 </button>
               </div>
-            </div>
-            <div className="cv-preview-viewer">
-              <PDFViewer pdfUrl={previewCv.cv_url} />
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
 
-      {showUploadModal && createPortal(
-        <div
-          className="modal-overlay"
-          onClick={() => setShowUploadModal(false)}
-        >
-          <div className="cv-upload-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Tải CV mới</h2>
-              <button
-                className="modal-close"
-                onClick={() => setShowUploadModal(false)}
-              >
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                >
-                  <line x1="18" y1="6" x2="6" y2="18" strokeWidth="2" />
-                  <line x1="6" y1="6" x2="18" y2="18" strokeWidth="2" />
-                </svg>
-              </button>
-            </div>
-
-            <div className="modal-body">
-              <div className="upload-zone">
-                <input
-                  type="file"
-                  id="cv-upload-input"
-                  accept=".pdf,.doc,.docx"
-                  onChange={handleFileSelect}
-                  style={{ display: "none" }}
-                />
-                <label htmlFor="cv-upload-input" className="upload-zone-label">
-                  {uploadFile ? (
-                    <div className="file-selected-preview">
-                      {getFileIcon(uploadFile.name)}
-                      <div className="file-info">
-                        <div className="file-name">{uploadFile.name}</div>
-                        <div className="file-size">
-                          {formatFileSize(uploadFile.size)}
+              <div className="modal-body">
+                <div className="upload-zone">
+                  <input
+                    type="file"
+                    id="cv-upload-input"
+                    accept=".pdf,.docx"
+                    onChange={handleFileSelect}
+                    style={{ display: "none" }}
+                  />
+                  <label
+                    htmlFor="cv-upload-input"
+                    className="upload-zone-label"
+                  >
+                    {uploadFile ? (
+                      <div className="file-selected-preview">
+                        {getFileIcon(uploadFile.name)}
+                        <div className="file-info">
+                          <div className="file-name">{uploadFile.name}</div>
+                          <div className="file-size">
+                            {formatFileSize(uploadFile.size)}
+                          </div>
                         </div>
+                        <button
+                          className="btn-remove-file"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setUploadFile(null);
+                            setCvName("");
+                          }}
+                        >
+                          <svg
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                          >
+                            <line
+                              x1="18"
+                              y1="6"
+                              x2="6"
+                              y2="18"
+                              strokeWidth="2"
+                            />
+                            <line
+                              x1="6"
+                              y1="6"
+                              x2="18"
+                              y2="18"
+                              strokeWidth="2"
+                            />
+                          </svg>
+                        </button>
                       </div>
-                      <button
-                        className="btn-remove-file"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          setUploadFile(null);
-                          setCvName("");
-                        }}
-                      >
+                    ) : (
+                      <div className="upload-zone-placeholder">
                         <svg
-                          width="20"
-                          height="20"
+                          width="64"
+                          height="64"
                           viewBox="0 0 24 24"
                           fill="none"
-                          stroke="currentColor"
+                          stroke="#9ca3af"
                         >
-                          <line x1="18" y1="6" x2="6" y2="18" strokeWidth="2" />
-                          <line x1="6" y1="6" x2="18" y2="18" strokeWidth="2" />
+                          <path
+                            d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
+                            strokeWidth="2"
+                          />
+                          <polyline points="17 8 12 3 7 8" strokeWidth="2" />
+                          <line
+                            x1="12"
+                            y1="3"
+                            x2="12"
+                            y2="15"
+                            strokeWidth="2"
+                          />
                         </svg>
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="upload-zone-placeholder">
+                        <p className="upload-text">
+                          Nhấp để chọn file hoặc kéo thả vào đây
+                        </p>
+                        <p className="upload-hint">
+                          PDF, DOCX (tối đa 5MB)
+                        </p>
+                      </div>
+                    )}
+                  </label>
+                </div>
+
+                {uploadFile && (
+                  <div className="cv-name-input-group">
+                    <label htmlFor="cv-name-input">
+                      Tên gợi nhớ (tùy chọn)
+                    </label>
+                    <input
+                      type="text"
+                      id="cv-name-input"
+                      value={cvName}
+                      onChange={(e) => setCvName(e.target.value)}
+                      placeholder="Ví dụ: CV Backend Developer 2024"
+                      className="cv-name-input"
+                    />
+                    <p className="input-hint">
+                      Đặt tên để dễ phân biệt khi có nhiều CV
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="modal-footer">
+                <button
+                  className="btn-modal-cancel"
+                  onClick={() => setShowUploadModal(false)}
+                >
+                  Hủy
+                </button>
+                <button
+                  className="btn-modal-submit"
+                  onClick={handleUpload}
+                  disabled={uploading}
+                >
+                  {uploading ? (
+                    <>
                       <svg
-                        width="64"
-                        height="64"
+                        className="spinner-icon"
+                        width="20"
+                        height="20"
                         viewBox="0 0 24 24"
                         fill="none"
-                        stroke="#9ca3af"
+                        stroke="currentColor"
+                      >
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56" strokeWidth="2" />
+                      </svg>
+                      Đang tải lên...
+                    </>
+                  ) : (
+                    <>
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
                       >
                         <path
                           d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
@@ -873,116 +921,48 @@ const CVManagement = () => {
                         <polyline points="17 8 12 3 7 8" strokeWidth="2" />
                         <line x1="12" y1="3" x2="12" y2="15" strokeWidth="2" />
                       </svg>
-                      <p className="upload-text">
-                        Nhấp để chọn file hoặc kéo thả vào đây
-                      </p>
-                      <p className="upload-hint">PDF, DOC, DOCX (tối đa 5MB)</p>
-                    </div>
+                      Tải lên
+                    </>
                   )}
-                </label>
+                </button>
               </div>
-
-              {uploadFile && (
-                <div className="cv-name-input-group">
-                  <label htmlFor="cv-name-input">Tên gợi nhớ (tùy chọn)</label>
-                  <input
-                    type="text"
-                    id="cv-name-input"
-                    value={cvName}
-                    onChange={(e) => setCvName(e.target.value)}
-                    placeholder="Ví dụ: CV Backend Developer 2024"
-                    className="cv-name-input"
-                  />
-                  <p className="input-hint">
-                    Đặt tên để dễ phân biệt khi có nhiều CV
-                  </p>
-                </div>
-              )}
             </div>
+          </div>,
+          document.body,
+        )}
 
-            <div className="modal-footer">
-              <button
-                className="btn-modal-cancel"
-                onClick={() => setShowUploadModal(false)}
-              >
-                Hủy
-              </button>
-              <button
-                className="btn-modal-submit"
-                onClick={handleUpload}
-                disabled={uploading}
-              >
-                {uploading ? (
-                  <>
-                    <svg
-                      className="spinner-icon"
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                    >
-                      <path d="M21 12a9 9 0 1 1-6.219-8.56" strokeWidth="2" />
-                    </svg>
-                    Đang tải lên...
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                    >
-                      <path
-                        d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"
-                        strokeWidth="2"
-                      />
-                      <polyline points="17 8 12 3 7 8" strokeWidth="2" />
-                      <line x1="12" y1="3" x2="12" y2="15" strokeWidth="2" />
-                    </svg>
-                    Tải lên
-                  </>
-                )}
-              </button>
+      {showDeleteConfirm &&
+        createPortal(
+          <div
+            className="modal-overlay"
+            onClick={() => setShowDeleteConfirm(false)}
+          >
+            <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="confirm-icon"></div>
+              <h3>Xác nhận xóa CV</h3>
+              <p>
+                Bạn có chắc chắn muốn xóa {selectedCvs.length} CV đã chọn?
+                <br />
+                Hành động này không thể hoàn tác.
+              </p>
+              <div className="confirm-actions">
+                <button
+                  className="btn-confirm-cancel"
+                  onClick={() => setShowDeleteConfirm(false)}
+                >
+                  Hủy
+                </button>
+                <button
+                  className="btn-confirm-delete"
+                  onClick={handleDeleteSelected}
+                >
+                  Xóa
+                </button>
+              </div>
             </div>
-          </div>
-        </div>,
-        document.body,
-      )}
-
-      {showDeleteConfirm && createPortal(
-        <div
-          className="modal-overlay"
-          onClick={() => setShowDeleteConfirm(false)}
-        >
-          <div className="confirm-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="confirm-icon"></div>
-            <h3>Xác nhận xóa CV</h3>
-            <p>
-              Bạn có chắc chắn muốn xóa {selectedCvs.length} CV đã chọn?
-              <br />
-              Hành động này không thể hoàn tác.
-            </p>
-            <div className="confirm-actions">
-              <button
-                className="btn-confirm-cancel"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
-                Hủy
-              </button>
-              <button
-                className="btn-confirm-delete"
-                onClick={handleDeleteSelected}
-              >
-                Xóa
-              </button>
-            </div>
-          </div>
-        </div>,
-        document.body,
-      )}
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };

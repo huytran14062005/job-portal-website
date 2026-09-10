@@ -10,10 +10,7 @@ import { getSavedJobStatusMap } from "./savedJobStatus";
 import { isJobExpired } from "../../utils/jobExpiry";
 import { getApiError } from "../../utils/apiError";
 import { formatSalary } from "../../utils/formatters";
-import {
-  getCompanyLogo,
-  onCompanyLogoError,
-} from "../../utils/defaultImages";
+import { getCompanyLogo, onCompanyLogoError } from "../../utils/defaultImages";
 
 const JobDetail = () => {
   const { jobId } = useParams();
@@ -27,9 +24,10 @@ const JobDetail = () => {
   const [saving, setSaving] = useState(false);
   const [relatedJobs, setRelatedJobs] = useState([]);
   const [loadingRelated, setLoadingRelated] = useState(false);
-  const [savedJobs, setSavedJobs] = useState({}); 
+  const [savedJobs, setSavedJobs] = useState({});
   const [showApplyModal, setShowApplyModal] = useState(false);
   const [applyInfo, setApplyInfo] = useState(null); 
+  const [checkingApplied, setCheckingApplied] = useState(true);
   const [showRelatedJobs, setShowRelatedJobs] = useState(true); 
 
   useEffect(() => {
@@ -97,14 +95,21 @@ const JobDetail = () => {
   };
 
   const checkAppliedStatus = async () => {
-    if (!user || user.role !== "ungvien") return;
+    if (!user || user.role !== "ungvien") {
+      setApplyInfo(null);
+      setCheckingApplied(false);
+      return;
+    }
 
     try {
+      setCheckingApplied(true);
       const api = authApis();
       const response = await api.get(endpoints["check-applied"](jobId));
       setApplyInfo(response.data);
     } catch (err) {
       console.error("Error checking applied status:", err);
+    } finally {
+      setCheckingApplied(false);
     }
   };
 
@@ -139,13 +144,10 @@ const JobDetail = () => {
       return;
     }
 
-    
-    
     try {
       const api = authApis();
       const response = await api.post(endpoints["save-job"](relatedJobId));
 
-      
       setSavedJobs((prev) => ({
         ...prev,
         [relatedJobId]: response.data.is_saved,
@@ -158,9 +160,7 @@ const JobDetail = () => {
       }
     } catch (err) {
       console.error("Error saving related job:", err);
-      toast.error(
-        getApiError(err, "Có lỗi xảy ra khi lưu công việc!"),
-      );
+      toast.error(getApiError(err, "Có lỗi xảy ra khi lưu công việc!"));
     }
   };
 
@@ -176,8 +176,6 @@ const JobDetail = () => {
       return;
     }
 
-    
-    
     setSaving(true);
 
     try {
@@ -193,9 +191,7 @@ const JobDetail = () => {
       }
     } catch (err) {
       console.error("Error saving job:", err);
-      toast.error(
-        getApiError(err, "Có lỗi xảy ra khi lưu công việc!"),
-      );
+      toast.error(getApiError(err, "Có lỗi xảy ra khi lưu công việc!"));
     } finally {
       setSaving(false);
     }
@@ -213,8 +209,8 @@ const JobDetail = () => {
       return;
     }
 
-    
-    
+    if (checkingApplied) return;
+
     setShowApplyModal(true);
   };
 
@@ -222,14 +218,15 @@ const JobDetail = () => {
     checkAppliedStatus();
   };
 
-  
   const getApplyButtonState = () => {
-    
+    if (checkingApplied) {
+      return { label: "Đang kiểm tra...", disabled: true, className: "" };
+    }
+
     if (job?.status === "ẩn") {
       return { label: "Bài đăng đã đóng", disabled: true, className: "closed" };
     }
 
-    
     if (isJobExpired(job)) {
       return {
         label: "Đã hết hạn ứng tuyển",
@@ -293,11 +290,11 @@ const JobDetail = () => {
         jobId={jobId}
         jobTitle={job?.title}
         companyName={job?.company_name}
+        applyInfo={applyInfo}
         onSuccess={handleApplySuccess}
       />
 
       <div className="job-detail-container">
-        
         <button className="btn-back" onClick={() => navigate("/jobs")}>
           <svg
             width="20"
@@ -316,7 +313,6 @@ const JobDetail = () => {
           Quay lại
         </button>
 
-        
         <div className="job-detail-header">
           <div className="job-header-content">
             <div className="job-header-left">
@@ -327,58 +323,58 @@ const JobDetail = () => {
             </div>
 
             {user?.role === "ungvien" && (
-            <div className="job-header-actions">
-              <button
-                className={`btn-save-detail ${isSaved ? "saved" : ""} ${
-                  !isSaved && isJobExpired(job) ? "expired" : ""
-                }`}
-                onClick={handleSaveJob}
-                disabled={saving}
-                title={
-                  !isSaved && isJobExpired(job)
-                    ? "Bài đăng đã hết hạn, không thể lưu tin"
-                    : undefined
-                }
-              >
-                <svg
-                  width="20"
-                  height="20"
-                  viewBox="0 0 24 24"
-                  fill={isSaved ? "currentColor" : "none"}
-                  stroke="currentColor"
-                  strokeWidth="2"
+              <div className="job-header-actions">
+                <button
+                  className={`btn-save-detail ${isSaved ? "saved" : ""} ${
+                    !isSaved && isJobExpired(job) ? "expired" : ""
+                  }`}
+                  onClick={handleSaveJob}
+                  disabled={saving}
+                  title={
+                    !isSaved && isJobExpired(job)
+                      ? "Bài đăng đã hết hạn, không thể lưu tin"
+                      : undefined
+                  }
                 >
-                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-                </svg>
-                {isSaved ? "Đã lưu" : "Lưu tin"}
-              </button>
-
-              <button
-                className={`btn-apply ${applyBtn.className}`}
-                onClick={handleApplyClick}
-                disabled={applyBtn.disabled}
-              >
-                {applyBtn.className !== "waiting" && (
                   <svg
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
-                    fill="currentColor"
+                    fill={isSaved ? "currentColor" : "none"}
+                    stroke="currentColor"
+                    strokeWidth="2"
                   >
-                    {applyBtn.className === "applied" ? (
-                      <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" />
-                    ) : applyBtn.className === "reapply" ? (
-                      <path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
-                    ) : applyBtn.className === "expired" ? (
-                      <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
-                    ) : (
-                      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-                    )}
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                   </svg>
-                )}
-                {applyBtn.label}
-              </button>
-            </div>
+                  {isSaved ? "Đã lưu" : "Lưu tin"}
+                </button>
+
+                <button
+                  className={`btn-apply ${applyBtn.className}`}
+                  onClick={handleApplyClick}
+                  disabled={applyBtn.disabled}
+                >
+                  {applyBtn.className !== "waiting" && (
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="currentColor"
+                    >
+                      {applyBtn.className === "applied" ? (
+                        <path d="M9 16.2L4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4L9 16.2z" />
+                      ) : applyBtn.className === "reapply" ? (
+                        <path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" />
+                      ) : applyBtn.className === "expired" ? (
+                        <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z" />
+                      ) : (
+                        <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                      )}
+                    </svg>
+                  )}
+                  {applyBtn.label}
+                </button>
+              </div>
             )}
           </div>
 
@@ -410,8 +406,8 @@ const JobDetail = () => {
                   applyInfo.status === "đã duyệt"
                     ? "approved-notice"
                     : applyInfo.can_reapply
-                    ? "reapply-ready"
-                    : ""
+                      ? "reapply-ready"
+                      : ""
                 }`}
               >
                 <span className="job-apply-notice-text">
@@ -426,11 +422,8 @@ const JobDetail = () => {
             )}
         </div>
 
-        
         <div className="job-detail-content">
-          
           <div className="job-detail-main">
-            
             <div className="job-info-card">
               <h2 className="section-title">Thông tin chung</h2>
               <div className="info-grid">
@@ -538,7 +531,6 @@ const JobDetail = () => {
               </div>
             </div>
 
-            
             <div className="job-description-card">
               <h2 className="section-title">Mô tả chi tiết công việc</h2>
               <div className="job-description-content">
@@ -548,7 +540,6 @@ const JobDetail = () => {
               </div>
             </div>
 
-            
             {job.requirements && (
               <div className="job-description-card">
                 <h2 className="section-title section-title-green">
@@ -565,7 +556,6 @@ const JobDetail = () => {
               </div>
             )}
 
-            
             {job.benefits && (
               <div className="job-description-card">
                 <h2 className="section-title section-title-green">
@@ -582,7 +572,6 @@ const JobDetail = () => {
               </div>
             )}
 
-            
             <div className="related-jobs-section">
               <div className="related-jobs-header">
                 <h2 className="section-title">Các công việc liên quan</h2>
@@ -707,17 +696,13 @@ const JobDetail = () => {
               </div>
             </div>
 
-            
             <JobReviews jobId={jobId} />
           </div>
 
-          
           <div className="job-detail-sidebar">
-            
             <div className="company-card">
               <h3 className="sidebar-title">Thông tin công ty</h3>
               <div className="company-info">
-                
                 <div className="company-logo-container">
                   <img
                     src={getCompanyLogo(job.company_logo)}
@@ -727,10 +712,8 @@ const JobDetail = () => {
                   />
                 </div>
 
-                
                 <h4 className="company-card-name">{job.company_name}</h4>
 
-                
                 <div className="company-details">
                   {job.company_size && (
                     <div className="company-detail-item">
@@ -760,7 +743,6 @@ const JobDetail = () => {
                   )}
                 </div>
 
-                
                 <button
                   className="btn-view-company"
                   onClick={() => navigate(`/companies/${job.company_id}`)}

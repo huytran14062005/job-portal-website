@@ -11,10 +11,7 @@ def _get_reviewable_job(job_post_id, action_label):
     if not job:
         raise NotFoundError("Công việc không tồn tại")
 
-    if job.status != PostStatus.HOAT_DONG:
-        raise ValidationError(f"Không thể {action_label} cho công việc đã đóng hoặc bị ẩn")
-
-    if not job.company or job.company.status != CompanyStatus.DA_DUYET:
+    if not job.company or job.company.status != CompanyStatus.DA_DUYET or job.status != PostStatus.HOAT_DONG:
         raise ValidationError(f"Không thể {action_label} cho công việc đã đóng hoặc bị ẩn")
 
     if dao.is_job_expired(job.deadline, job.status):
@@ -39,7 +36,7 @@ def create_review_service(candidate_id, job_post_id, rating, comment=None):
     
     if job_review_dao.get_review_by_candidate_and_job(candidate_id, job_post_id):
         raise ValidationError(
-            "Bạn đã đánh giá công việc này rồi. Vui lòng chỉnh sửa đánh giá của bạn."
+            "Bạn đã đánh giá công việc này rồi. Nên bạn chỉ được chỉnh sửa."
         )
 
     
@@ -54,9 +51,11 @@ def create_review_service(candidate_id, job_post_id, rating, comment=None):
     )
 
 
-def update_review_service(review_id, candidate_id, rating=None, comment=None):
+def update_review_service(review_id, candidate_id, job_post_id, rating=None, comment=None):
     
-    review = job_review_dao.get_review_by_id_for_candidate(review_id, candidate_id)
+    review = job_review_dao.get_review_by_id_for_candidate(
+        review_id, candidate_id, job_post_id
+    )
     if not review:
         raise NotFoundError("Đánh giá không tồn tại hoặc bạn không có quyền chỉnh sửa")
 
@@ -78,8 +77,10 @@ def update_review_service(review_id, candidate_id, rating=None, comment=None):
     return job_review_dao.update_review(review, rating=clean_rating, comment=clean_comment)
 
 
-def delete_review_service(review_id, candidate_id):
-    review = job_review_dao.get_review_by_id_for_candidate(review_id, candidate_id)
+def delete_review_service(review_id, candidate_id, job_post_id):
+    review = job_review_dao.get_review_by_id_for_candidate(
+        review_id, candidate_id, job_post_id
+    )
 
     if not review:
         raise NotFoundError("Đánh giá không tồn tại hoặc bạn không có quyền xóa")
@@ -89,3 +90,7 @@ def delete_review_service(review_id, candidate_id):
 
 def get_reviews_service(job_post_id, page=1, limit=10):
     return job_review_dao.get_reviews_by_job(job_post_id=job_post_id, page=page, limit=limit)
+
+
+def get_own_review_service(candidate_id, job_post_id):
+    return job_review_dao.get_review_by_candidate_and_job(candidate_id, job_post_id)

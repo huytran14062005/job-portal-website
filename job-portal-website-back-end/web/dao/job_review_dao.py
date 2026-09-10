@@ -41,10 +41,11 @@ def get_review_by_candidate_and_job(candidate_id, job_post_id):
     ).first()
 
 
-def get_review_by_id_for_candidate(review_id, candidate_id):
+def get_review_by_id_for_candidate(review_id, candidate_id, job_post_id):
     return JobReview.query.filter(
         JobReview.id == review_id,
-        JobReview.candidate_id == candidate_id
+        JobReview.candidate_id == candidate_id,
+        JobReview.job_post_id == job_post_id
     ).first()
 
 
@@ -100,7 +101,7 @@ def get_reviews_by_job(job_post_id, page=1, limit=10):
         'candidate_avatar': r.candidate_avatar
     } for r in reviews]
 
-    return reviews_list, total, round(float(avg_rating), 2), total
+    return reviews_list, total, round(float(avg_rating), 2)
 
 
 def update_review(review, rating=None, comment=None):

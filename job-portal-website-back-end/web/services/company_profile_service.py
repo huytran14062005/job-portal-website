@@ -18,7 +18,6 @@ def get_company_profile_service(user_id):
 
     if user.role != UserRole.NHATUYENDUNG:
         raise NotFoundError("Tài khoản này không phải nhà tuyển dụng")
-
     
     return user, dao.ensure_company_profile(user_id)
 

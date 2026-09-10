@@ -134,7 +134,15 @@ const AiMatchResult = ({ result }) => {
   );
 };
 
-const ApplyJobModal = ({ isOpen, onClose, jobId, jobTitle, companyName, onSuccess }) => {
+const ApplyJobModal = ({
+  isOpen,
+  onClose,
+  jobId,
+  jobTitle,
+  companyName,
+  applyInfo,
+  onSuccess,
+}) => {
   const [cvList, setCvList] = useState([]);
   const [selectedCvId, setSelectedCvId] = useState(null);
   const [newCvFile, setNewCvFile] = useState(null);
@@ -143,8 +151,6 @@ const ApplyJobModal = ({ isOpen, onClose, jobId, jobTitle, companyName, onSucces
   const [loadingCvs, setLoadingCvs] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [applyInfo, setApplyInfo] = useState(null); 
-  const [checkingApplied, setCheckingApplied] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filteredCvList, setFilteredCvList] = useState([]);
   const [matchResult, setMatchResult] = useState(null);
@@ -152,7 +158,6 @@ const ApplyJobModal = ({ isOpen, onClose, jobId, jobTitle, companyName, onSucces
 
   useEffect(() => {
     if (isOpen) {
-      checkIfAlreadyApplied();
       fetchCvList();
       
       setSelectedCvId(null);
@@ -193,20 +198,6 @@ const ApplyJobModal = ({ isOpen, onClose, jobId, jobTitle, companyName, onSucces
       setFilteredCvList(filtered);
     }
   }, [searchQuery, cvList]); 
-
-  
-  const checkIfAlreadyApplied = async () => {
-    try {
-      setCheckingApplied(true);
-      const api = authApis();
-      const response = await api.get(endpoints["check-applied"](jobId));
-      setApplyInfo(response.data);
-    } catch (err) {
-      console.error("Error checking applied status:", err);
-    } finally {
-      setCheckingApplied(false);
-    }
-  };
 
   
   const isBlocked = applyInfo && applyInfo.is_applied && !applyInfo.can_reapply;
@@ -343,12 +334,7 @@ const ApplyJobModal = ({ isOpen, onClose, jobId, jobTitle, companyName, onSucces
 
         
         <div className="apply-modal-body">
-          {checkingApplied ? (
-            <div className="checking-status">
-              <div className="spinner-small"></div>
-              <span>Đang kiểm tra...</span>
-            </div>
-          ) : isBlocked ? (
+          {isBlocked ? (
             <div className="already-applied-message">
               {applyInfo.status === "từ chối" ? (
                 <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#ef4444">
@@ -585,7 +571,7 @@ const ApplyJobModal = ({ isOpen, onClose, jobId, jobTitle, companyName, onSucces
                     <input
                       type="file"
                       id="cv-file-input"
-                      accept=".pdf,.doc,.docx"
+                      accept=".pdf,.docx"
                       onChange={handleFileChange}
                       style={{ display: "none" }}
                     />
@@ -622,7 +608,7 @@ const ApplyJobModal = ({ isOpen, onClose, jobId, jobTitle, companyName, onSucces
                           </svg>
                           <div className="upload-text">
                             <span className="upload-main-text">Nhấp để chọn file CV</span>
-                            <span className="upload-sub-text">Hỗ trợ: PDF, DOC, DOCX (tối đa 5MB)</span>
+                            <span className="upload-sub-text">Hỗ trợ: PDF, DOCX (tối đa 5MB)</span>
                           </div>
                         </div>
                       )}
@@ -635,7 +621,7 @@ const ApplyJobModal = ({ isOpen, onClose, jobId, jobTitle, companyName, onSucces
         </div>
 
         
-        {!checkingApplied && !isBlocked && (
+        {!isBlocked && (
           <div className="apply-modal-footer">
             <button
               className="btn-cancel-apply"

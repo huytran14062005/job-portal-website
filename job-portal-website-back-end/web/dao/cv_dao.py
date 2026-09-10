@@ -37,13 +37,9 @@ def get_cv_files(candidate_id, page=1, search=None):
     query = CVFile.query.filter(
         CVFile.candidate_id == candidate_id
     )
-    
-
 
     if search and search.strip():
         search_term = f"%{search.strip().lower()}%"
-        
-
 
         query = query.filter(
             db.or_(
@@ -52,9 +48,7 @@ def get_cv_files(candidate_id, page=1, search=None):
             )
         )
     
-
     query = query.order_by(CVFile.uploaded_at.desc())
-
 
     query, total = apply_pagination(query, page)
 

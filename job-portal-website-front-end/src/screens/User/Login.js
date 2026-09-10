@@ -19,7 +19,6 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  
   useEffect(() => {
     localStorage.removeItem("rememberedPassword");
     const savedUsername = localStorage.getItem("rememberedUsername");
@@ -43,8 +42,6 @@ const Login = () => {
     e.preventDefault();
     setError("");
 
-    
-    
     try {
       setLoading(true);
       const response = await Apis.post(endpoints.login, {
@@ -53,18 +50,15 @@ const Login = () => {
       });
 
       if (response.data.token) {
-        
         localStorage.setItem("token", response.data.token);
         localStorage.setItem("user", JSON.stringify(response.data.user));
 
-        
         if (rememberMe) {
           localStorage.setItem("rememberedUsername", formData.username);
         } else {
           localStorage.removeItem("rememberedUsername");
         }
 
-        
         dispatch({
           type: "LOGIN",
           payload: response.data.user,

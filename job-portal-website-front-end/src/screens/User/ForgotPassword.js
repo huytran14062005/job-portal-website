@@ -31,8 +31,7 @@ const ForgotPassword = () => {
 
     try {
       setLoading(true);
-      
-      
+
       const response = await Apis.post(endpoints["forgot-password-request"], {
         email: formData.email,
       });
@@ -64,8 +63,6 @@ const ForgotPassword = () => {
     try {
       setLoading(true);
 
-      
-      
       const response = await Apis.post(endpoints["forgot-password-verify"], {
         email: formData.email,
         otp: formData.otp,
@@ -97,8 +94,6 @@ const ForgotPassword = () => {
     try {
       setLoading(true);
 
-      
-      
       await Apis.post(endpoints["forgot-password-reset"], {
         reset_token: resetToken,
         new_password: formData.newPassword,
@@ -132,7 +127,10 @@ const ForgotPassword = () => {
 
     if (step === "email") {
       return (
-        <form onSubmit={handleRequestOtp} className="auth-form forgot-password-form">
+        <form
+          onSubmit={handleRequestOtp}
+          className="auth-form forgot-password-form"
+        >
           <div className="form-group">
             <label htmlFor="forgot-email">Email tài khoản</label>
             <input
@@ -146,7 +144,11 @@ const ForgotPassword = () => {
               autoComplete="email"
             />
           </div>
-          <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
+          <button
+            type="submit"
+            className="btn btn-primary btn-block"
+            disabled={loading}
+          >
             {loading ? "Đang gửi..." : "Gửi mã OTP"}
           </button>
         </form>
@@ -155,7 +157,10 @@ const ForgotPassword = () => {
 
     if (step === "otp") {
       return (
-        <form onSubmit={handleVerifyOtp} className="auth-form forgot-password-form">
+        <form
+          onSubmit={handleVerifyOtp}
+          className="auth-form forgot-password-form"
+        >
           <div className="form-group">
             <label htmlFor="forgot-otp">Mã OTP 6 số</label>
             <input
@@ -170,7 +175,11 @@ const ForgotPassword = () => {
               autoComplete="one-time-code"
             />
           </div>
-          <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
+          <button
+            type="submit"
+            className="btn btn-primary btn-block"
+            disabled={loading}
+          >
             {loading ? "Đang xác thực..." : "Xác nhận OTP"}
           </button>
           <button
@@ -189,7 +198,10 @@ const ForgotPassword = () => {
     }
 
     return (
-      <form onSubmit={handleResetPassword} className="auth-form forgot-password-form">
+      <form
+        onSubmit={handleResetPassword}
+        className="auth-form forgot-password-form"
+      >
         <div className="form-group">
           <label htmlFor="new-password">Mật khẩu mới</label>
           <input
@@ -214,7 +226,11 @@ const ForgotPassword = () => {
             autoComplete="new-password"
           />
         </div>
-        <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
+        <button
+          type="submit"
+          className="btn btn-primary btn-block"
+          disabled={loading}
+        >
           {loading ? "Đang cập nhật..." : "Đổi mật khẩu"}
         </button>
       </form>
@@ -230,7 +246,8 @@ const ForgotPassword = () => {
         </h2>
         {step !== "success" && (
           <p className="forgot-password-description">
-            {step === "email" && "Nhập email để nhận mã OTP khôi phục mật khẩu."}
+            {step === "email" &&
+              "Nhập email để nhận mã OTP khôi phục mật khẩu."}
             {step === "otp" && "Nhập mã OTP đã được gửi đến email của bạn."}
             {step === "reset" && "Tạo mật khẩu mới cho tài khoản của bạn."}
           </p>

@@ -111,12 +111,8 @@ def get_jobs(user_id=None, page=1, limit=None, keyword=None, location_id=None, j
     if location_id:
         query = query.filter(JobPost.location_id == location_id)
 
-
     if job_type_id:
         query = query.filter(JobPost.job_type_id == job_type_id)
-
-
-
 
     if min_salary_filter is not None:
         query = query.filter(JobPost.min_salary >= min_salary_filter)
@@ -128,7 +124,6 @@ def get_jobs(user_id=None, page=1, limit=None, keyword=None, location_id=None, j
     if saved_jobs_only:
         query = query.order_by(SavedJob.saved_at.desc())
     else:
-
         query = query.order_by(func.coalesce(func.avg(JobReview.rating), 0).desc(), JobPost.created_at.desc())
 
 
@@ -181,12 +176,11 @@ def get_job_detail(job_id):
         JobLocation.name.label('location_name'),
         JobType.name.label('job_type_name')
     )
-           .join(CompanyInfo, JobPost.company_id == CompanyInfo.id)
-           .join(JobLocation, JobPost.location_id == JobLocation.id)
-           .join(JobType, JobPost.job_type_id == JobType.id)
-           .filter(JobPost.id == job_id)
-           .filter(approved_company_condition())
-           .first())
+    .join(CompanyInfo, JobPost.company_id == CompanyInfo.id)
+    .join(JobLocation, JobPost.location_id == JobLocation.id)
+    .join(JobType, JobPost.job_type_id == JobType.id)
+    .filter(JobPost.id == job_id)
+    .filter(approved_company_condition()).first())
 
     if not job:
         return None
@@ -275,13 +269,16 @@ def get_saved_job_ids(user_id, job_post_ids):
     return [job_post_id for (job_post_id,) in rows]
 
 
-def create_job_post(company_id, title, min_salary, max_salary, description, deadline, location_id, job_type_id):
+def create_job_post(company_id, title, min_salary, max_salary, description,
+                    requirements, benefits, deadline, location_id, job_type_id):
     job_post = JobPost(
         company_id=company_id,
         title=title,
         min_salary=min_salary,
         max_salary=max_salary,
         description=description,
+        requirements=requirements,
+        benefits=benefits,
         deadline=deadline,
         location_id=location_id,
         job_type_id=job_type_id,
@@ -308,12 +305,15 @@ def get_company_job_posts(company_id, page=1):
     return query.all(), total
 
 
-def update_job_post(job_post, title, min_salary, max_salary, description, deadline,
-                    location_id, job_type_id, status=None):
+def update_job_post(job_post, title, min_salary, max_salary, description,
+                    requirements, benefits, deadline, location_id, job_type_id,
+                    status=None):
     job_post.title = title
     job_post.min_salary = min_salary
     job_post.max_salary = max_salary
     job_post.description = description
+    job_post.requirements = requirements
+    job_post.benefits = benefits
     job_post.deadline = deadline
     job_post.location_id = location_id
     job_post.job_type_id = job_type_id
@@ -378,10 +378,9 @@ def get_related_jobs(job_id, limit=5):
         JobPost.company_id,
         CompanyInfo.industry
     )
-                   .join(CompanyInfo, JobPost.company_id == CompanyInfo.id)
-                   .filter(JobPost.id == job_id)
-                   .filter(approved_company_condition())
-                   .first())
+    .join(CompanyInfo, JobPost.company_id == CompanyInfo.id)
+    .filter(JobPost.id == job_id)
+    .filter(approved_company_condition()).first())
 
     if not current_job:
         return []
@@ -398,14 +397,13 @@ def get_related_jobs(job_id, limit=5):
         CompanyInfo.company_name,
         JobLocation.name.label('location_name')
     )
-             .join(CompanyInfo, JobPost.company_id == CompanyInfo.id)
-             .join(JobLocation, JobPost.location_id == JobLocation.id)
-             .filter(JobPost.company_id == company_id)
-             .filter(CompanyInfo.industry == industry)
-             .filter(JobPost.id != job_id)
-             .filter(public_job_posts_condition())
-             .order_by(JobPost.created_at.desc())
-             .limit(limit))
+    .join(CompanyInfo, JobPost.company_id == CompanyInfo.id)
+    .join(JobLocation, JobPost.location_id == JobLocation.id)
+    .filter(JobPost.company_id == company_id)
+    .filter(CompanyInfo.industry == industry)
+    .filter(JobPost.id != job_id)
+    .filter(public_job_posts_condition())
+    .order_by(JobPost.created_at.desc()).limit(limit))
 
     jobs = query.all()
 

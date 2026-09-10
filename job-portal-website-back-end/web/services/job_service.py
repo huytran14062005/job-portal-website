@@ -1,7 +1,7 @@
 from web import dao
 from web.models import CompanyStatus, JobPost, PostStatus
 from web.services.exceptions import NotFoundError, ValidationError
-from web.services.validators import Limits, require_id_list
+from web.services.validators import Limits
 
 
 def toggle_save_job_service(user_id, job_post_id):
@@ -41,17 +41,21 @@ def get_saved_job_statuses_service(user_id, raw_job_ids):
         return []
 
     try:
-        parsed = [int(part.strip()) for part in text.split(',') if part.strip()]
+        parsed = list(dict.fromkeys(
+            int(part.strip()) for part in text.split(',') if part.strip()
+        ))
     except ValueError:
         raise ValidationError("job_ids phải là danh sách ID hợp lệ")
 
-    job_ids = require_id_list(
-        parsed,
-        "job_ids",
-        max_items=Limits.SAVED_STATUS_BATCH_MAX
-    )
+    if not parsed or any(job_id <= 0 for job_id in parsed):
+        raise ValidationError("job_ids phải là danh sách ID hợp lệ")
 
-    return dao.get_saved_job_ids(user_id, job_ids)
+    if len(parsed) > Limits.SAVED_STATUS_BATCH_MAX:
+        raise ValidationError(
+            f"job_ids chỉ được tối đa {Limits.SAVED_STATUS_BATCH_MAX} phần tử mỗi lần"
+        )
+
+    return dao.get_saved_job_ids(user_id, parsed)
 
 
 def get_job_detail_service(job_id):

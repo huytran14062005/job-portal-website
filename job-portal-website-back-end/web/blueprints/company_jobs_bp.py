@@ -24,6 +24,8 @@ def _job_to_dict(job):
         "min_salary": job.min_salary,
         "max_salary": job.max_salary,
         "description": job.description,
+        "requirements": job.requirements,
+        "benefits": job.benefits,
         "deadline": job.deadline.strftime('%d-%m-%Y') if job.deadline else None,
         "status": job.status.value,
         "location_id": job.location_id,
