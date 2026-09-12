@@ -1,3 +1,4 @@
+import json
 import os
 
 import cloudinary
@@ -56,23 +57,44 @@ user_sockets = {}
 
 
 try:
-    
     basedir = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
-    
-    
-    firebase_cred_filename = os.getenv('FIREBASE_SERVICE_ACCOUNT_PATH', 'job-searching-firebase-adminsdk.json')
-    
-    
-    firebase_cred_path = os.path.join(basedir, firebase_cred_filename)
     firebase_database_url = os.getenv('FIREBASE_DATABASE_URL')
-    
-    if os.path.exists(firebase_cred_path):
-        cred = credentials.Certificate(firebase_cred_path)
-        firebase_admin.initialize_app(cred, {
-            'databaseURL': firebase_database_url
-        })
+    firebase_cred_json = os.getenv('FIREBASE_SERVICE_ACCOUNT_JSON')
+
+    cred = None
+
+    # Trên Vercel, đọc service account trực tiếp từ một biến môi trường Secret.
+    if firebase_cred_json:
+        cred = credentials.Certificate(json.loads(firebase_cred_json))
+    else:
+        # Khi chạy local, tiếp tục hỗ trợ file JSON như trước.
+        firebase_cred_filename = os.getenv(
+            'FIREBASE_SERVICE_ACCOUNT_PATH',
+            'job-searching-firebase-adminsdk.json'
+        )
+        firebase_cred_path = os.path.join(basedir, firebase_cred_filename)
+
+        if os.path.exists(firebase_cred_path):
+            cred = credentials.Certificate(firebase_cred_path)
+
+    if cred and not firebase_admin._apps:
+        firebase_options = {}
+        if firebase_database_url:
+            firebase_options['databaseURL'] = firebase_database_url
+
+        firebase_admin.initialize_app(cred, firebase_options)
+    elif not cred:
+        app.logger.warning(
+            'Firebase Admin was not initialized because no service account '
+            'credentials were configured.'
+        )
+except (json.JSONDecodeError, ValueError, TypeError):
+    app.logger.exception(
+        'Firebase Admin initialization failed because the service account '
+        'JSON is invalid.'
+    )
 except Exception:
-    pass
+    app.logger.exception('Firebase Admin initialization failed.')
 
 
 @socketio.on('connect')
