@@ -6,15 +6,13 @@ import MySpinner from "./MySpinner";
 import ConfirmModal from "./ConfirmModal";
 import Pagination from "./Pagination";
 import moment from "moment";
-import "moment/locale/vi";
 import { renderStars } from "../utils/renderStars";
 import { getApiError } from "../utils/apiError";
+import { formatRelativeTime } from "../utils/formatters";
 import {
   getApplicantAvatar,
   onApplicantAvatarError,
 } from "../utils/defaultImages";
-
-moment.locale("vi");
 
 const REVIEWS_PER_PAGE = 10;
 
@@ -201,14 +199,10 @@ const JobReviews = ({ jobId }) => {
     return stars;
   };
 
-  const formatDate = (dateString) => {
-    return moment(dateString).fromNow();
-  };
-
   const isEdited = (review) => {
     if (!review.updated_at || !review.created_at) return false;
-    const created = moment(review.created_at);
-    const updated = moment(review.updated_at);
+    const created = moment.utc(review.created_at);
+    const updated = moment.utc(review.updated_at);
 
     return updated.diff(created, "minutes") > 1;
   };
@@ -319,7 +313,7 @@ const JobReviews = ({ jobId }) => {
                         {review.candidate_name}
                       </span>
                       <span className="review-date">
-                        {formatDate(review.created_at)}
+                        {formatRelativeTime(review.created_at)}
                         {isEdited(review) && (
                           <span className="edited-badge"> · Đã chỉnh sửa</span>
                         )}

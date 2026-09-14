@@ -1,4 +1,22 @@
-from datetime import datetime
+from datetime import datetime, timezone
+
+
+def utc_now_naive():
+    """Return the current UTC time for storage in MySQL DATETIME columns."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def to_utc_isoformat(value):
+    """Serialize a database datetime with an explicit UTC offset."""
+    if value is None:
+        return None
+
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+    else:
+        value = value.astimezone(timezone.utc)
+
+    return value.isoformat()
 
 
 def parse_date_flexible(value, error_message="Ngày tháng sai định dạng"):

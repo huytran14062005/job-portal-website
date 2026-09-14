@@ -7,6 +7,7 @@ from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Intege
 from sqlalchemy.orm import backref, relationship
 
 from web import db
+from web.utils.date_parser import utc_now_naive
 
 
 class UserRole(UserEnum):
@@ -188,8 +189,8 @@ class JobReview(BaseModel):
 
     rating = Column(Integer, nullable=False)
     comment = Column(Text)
-    created_at = Column(DateTime, default=datetime.now)
-    updated_at = Column(DateTime, default=datetime.now, onupdate=datetime.now)
+    created_at = Column(DateTime, default=utc_now_naive)
+    updated_at = Column(DateTime, default=utc_now_naive, onupdate=utc_now_naive)
 
     candidate_id = Column(Integer, ForeignKey("applicant_info.id"), nullable=False)
     job_post_id = Column(Integer, ForeignKey("job_posts.id"), nullable=False)
@@ -234,7 +235,7 @@ class Notification(BaseModel):
     related_type = Column(String(50))
     related_id = Column(Integer)
     is_read = Column(Boolean, default=False)
-    created_at = Column(DateTime, default=datetime.now)
+    created_at = Column(DateTime, default=utc_now_naive)
 
     user = relationship(
         "User",

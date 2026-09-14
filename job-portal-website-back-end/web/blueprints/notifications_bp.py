@@ -9,6 +9,7 @@ from web.services.notification_service import (
     mark_all_as_read_service,
     mark_as_read_service,
 )
+from web.utils.date_parser import to_utc_isoformat
 
 notifications_bp = Blueprint('notifications', __name__, url_prefix='/api/notifications')
 
@@ -30,7 +31,7 @@ def get_notifications():
         'related_type': n.related_type,
         'related_id': n.related_id,
         'is_read': n.is_read,
-        'created_at': n.created_at.isoformat()
+        'created_at': to_utc_isoformat(n.created_at)
     } for n in notifications]
 
     return jsonify({

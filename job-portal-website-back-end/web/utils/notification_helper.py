@@ -1,5 +1,6 @@
 from web import db, socketio, user_sockets
 from web.models import Notification, NotificationType, CompanyInfo
+from web.utils.date_parser import to_utc_isoformat
 
 def create_and_emit_notification(user_id, notification_type, content, related_type=None, related_id=None):
     try:
@@ -25,7 +26,7 @@ def create_and_emit_notification(user_id, notification_type, content, related_ty
                 'related_type': notification.related_type,
                 'related_id': notification.related_id,
                 'is_read': notification.is_read,
-                'created_at': notification.created_at.isoformat()
+                'created_at': to_utc_isoformat(notification.created_at)
             }, room=socket_id)
             
         return notification

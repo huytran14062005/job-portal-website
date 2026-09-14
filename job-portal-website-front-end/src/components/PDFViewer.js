@@ -1,9 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
 
-
-pdfjsLib.GlobalWorkerOptions.workerSrc = "/pdf.worker.js";
-
+pdfjsLib.GlobalWorkerOptions.workerSrc = `${process.env.PUBLIC_URL}/pdf.worker.js`;
 const PDFViewer = ({ pdfUrl }) => {
   const canvasRef = useRef(null);
   const [pdf, setPdf] = useState(null);
@@ -37,10 +35,10 @@ const PDFViewer = ({ pdfUrl }) => {
         const blob = await response.blob();
         const buffer = await blob.arrayBuffer();
         const bytes = new Uint8Array(buffer);
-        const header = new TextDecoder("utf-8").decode(bytes.slice(0, 1024)).trimStart();
+        const header = new TextDecoder("utf-8")
+          .decode(bytes.slice(0, 1024))
+          .trimStart();
 
-        
-        
         if (/^<!doctype html|^<html/i.test(header)) {
           if (!cancelled) {
             setHtmlDocument(new TextDecoder("utf-8").decode(buffer));
@@ -188,7 +186,6 @@ const PDFViewer = ({ pdfUrl }) => {
 
   return (
     <div className="pdf-viewer">
-      
       <div className="pdf-controls">
         <div className="pdf-page-controls">
           <button
@@ -286,7 +283,6 @@ const PDFViewer = ({ pdfUrl }) => {
         </div>
       </div>
 
-      
       <div className="pdf-canvas-container">
         <canvas ref={canvasRef} className="pdf-canvas" />
       </div>

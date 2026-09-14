@@ -1,3 +1,8 @@
+import moment from "moment";
+import "moment/locale/vi";
+
+moment.locale("vi");
+
 const parseDate = (value, dayFirst) => {
   if (!dayFirst) return new Date(value);
 
@@ -13,6 +18,15 @@ const parseDate = (value, dayFirst) => {
     .map(Number);
 
   return new Date(year, month - 1, day, hours, minutes, seconds);
+};
+
+export const formatRelativeTime = (value, fallback = "—") => {
+  if (!value) return fallback;
+
+  const date = moment.utc(value);
+  if (!date.isValid()) return fallback;
+
+  return date.local().fromNow();
 };
 
 export const formatDate = (

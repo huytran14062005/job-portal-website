@@ -14,6 +14,7 @@ from web.services.job_review_service import (
     update_review_service,
 )
 from web.services.validators import parse_page, parse_per_page
+from web.utils.date_parser import to_utc_isoformat
 from web.utils.public_cache import invalidate_public_cache
 
 job_reviews_bp = Blueprint('job_reviews', __name__, url_prefix='/api/jobs')
@@ -24,8 +25,8 @@ def _review_to_dict(review):
         'id': review.id,
         'rating': review.rating,
         'comment': review.comment,
-        'created_at': review.created_at.isoformat() if review.created_at else None,
-        'updated_at': review.updated_at.isoformat() if review.updated_at else None,
+        'created_at': to_utc_isoformat(review.created_at),
+        'updated_at': to_utc_isoformat(review.updated_at),
         'candidate_id': review.candidate_id,
         'candidate_name': review.candidate.full_name if review.candidate else None,
         'candidate_avatar': review.candidate.avatar_url if review.candidate else None,
@@ -85,7 +86,7 @@ def create_job_review(job_id):
             "id": review.id,
             "rating": review.rating,
             "comment": review.comment,
-            "created_at": review.created_at.isoformat() if review.created_at else None
+            "created_at": to_utc_isoformat(review.created_at)
         }
     }), 201
 
@@ -113,7 +114,7 @@ def update_job_review(job_id, review_id):
             "id": review.id,
             "rating": review.rating,
             "comment": review.comment,
-            "updated_at": review.updated_at.isoformat() if review.updated_at else None
+            "updated_at": to_utc_isoformat(review.updated_at)
         }
     }), 200
 

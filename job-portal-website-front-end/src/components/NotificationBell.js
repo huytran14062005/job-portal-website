@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { authApis, endpoints } from "../configs/Apis";
 import { MyUserContext } from "../configs/Contexts";
-import { formatDate } from "../utils/formatters";
+import { formatRelativeTime } from "../utils/formatters";
 import "../css/NotificationBell.css";
 
 const NOTIFICATIONS_PER_PAGE = 3;
@@ -206,24 +206,7 @@ const NotificationBell = () => {
   };
 
   
-  const formatTime = (dateString) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffMs = now - date;
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMs / 3600000);
-    const diffDays = Math.floor(diffMs / 86400000);
-
-    if (diffMins < 1) return "Vừa xong";
-    if (diffMins < 60) return `${diffMins} phút trước`;
-    if (diffHours < 24) return `${diffHours} giờ trước`;
-    if (diffDays < 7) return `${diffDays} ngày trước`;
-
-    return formatDate(dateString, { twoDigit: true });
-  };
-
   
-
   if (!user) return null;
 
   return (
@@ -300,7 +283,7 @@ const NotificationBell = () => {
                         {notification.content}
                       </p>
                       <span className="notification-time">
-                        {formatTime(notification.created_at)}
+                        {formatRelativeTime(notification.created_at)}
                       </span>
                     </div>
                     <div className="notification-actions">

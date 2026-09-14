@@ -1,9 +1,8 @@
-from datetime import datetime
-
 from sqlalchemy import func
 
 from web import db
 from web.models import JobReview, ApplicantInfo, Application, ApplicationStatus
+from web.utils.date_parser import to_utc_isoformat, utc_now_naive
 
 
 def has_approved_application(candidate_id, job_post_id):
@@ -94,8 +93,8 @@ def get_reviews_by_job(job_post_id, page=1, limit=10):
         'id': r.id,
         'rating': r.rating,
         'comment': r.comment,
-        'created_at': r.created_at.isoformat() if r.created_at else None,
-        'updated_at': r.updated_at.isoformat() if r.updated_at else None,
+        'created_at': to_utc_isoformat(r.created_at),
+        'updated_at': to_utc_isoformat(r.updated_at),
         'candidate_id': r.candidate_id,
         'candidate_name': r.candidate_name,
         'candidate_avatar': r.candidate_avatar
@@ -111,7 +110,7 @@ def update_review(review, rating=None, comment=None):
     if comment is not None:
         review.comment = comment
 
-    review.updated_at = datetime.now()
+    review.updated_at = utc_now_naive()
 
     try:
         db.session.commit()
