@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { authApis, endpoints } from "../../configs/Apis";
 import Apis from "../../configs/Apis";
@@ -19,8 +19,10 @@ const PostJob = () => {
   const [checkingCompanyStatus, setCheckingCompanyStatus] = useState(true);
   const [companyStatus, setCompanyStatus] = useState(null);
   const [companyStatusError, setCompanyStatusError] = useState("");
+  const [isNoticeShaking, setIsNoticeShaking] = useState(false);
   const [locations, setLocations] = useState([]);
   const [jobTypes, setJobTypes] = useState([]);
+  const companyNoticeRef = useRef(null);
 
   const [formData, setFormData] = useState({
     title: "",
@@ -112,6 +114,16 @@ const PostJob = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    if (companyStatus === CompanyStatus.CHO_DUYET) {
+      companyNoticeRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+      setIsNoticeShaking(false);
+      window.requestAnimationFrame(() => setIsNoticeShaking(true));
+      return;
+    }
+
     try {
       setLoading(true);
 
@@ -161,6 +173,20 @@ const PostJob = () => {
 
       <div className="post-job-header">
         <h1>Đăng bài tuyển dụng</h1>
+
+        {!checkingCompanyStatus &&
+          !companyStatusError &&
+          companyStatus === CompanyStatus.CHO_DUYET && (
+            <div
+              ref={companyNoticeRef}
+              className={`alert alert-error post-job-company-notice${
+                isNoticeShaking ? " post-job-company-notice-shake" : ""
+              }`}
+              onAnimationEnd={() => setIsNoticeShaking(false)}
+            >
+              Tài khoản công ty đang chờ quản trị viên duyệt. Vui lòng đợi.
+            </div>
+          )}
       </div>
 
       {checkingCompanyStatus ? (

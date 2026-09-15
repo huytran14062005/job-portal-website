@@ -45,6 +45,39 @@
   margin: 0;
 }
 
+.post-job-company-notice {
+  margin: 20px 0 0;
+}
+
+.post-job-company-notice-shake {
+  animation: post-job-notice-shake 0.35s ease-in-out 1;
+}
+
+@keyframes post-job-notice-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-4px);
+  }
+
+  50% {
+    transform: translateX(4px);
+  }
+
+  75% {
+    transform: translateX(-2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-job-company-notice-shake {
+    animation: none;
+  }
+}
+
 .post-job-status-message,
 .post-job-company-rejected {
   padding: 20px 24px;
