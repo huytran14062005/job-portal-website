@@ -59,7 +59,7 @@ def create_refresh_session(user):
     return token
 
 
-def rotate_refresh_session(token):
+def validate_refresh_session(token):
     if not token:
         raise AuthenticationError("Phiên đăng nhập không tồn tại")
 
@@ -67,7 +67,6 @@ def rotate_refresh_session(token):
     refresh_session = (
         RefreshSession.query
         .filter(RefreshSession.token_hash == _hash_refresh_token(token))
-        .with_for_update()
         .first()
     )
 
@@ -78,12 +77,7 @@ def rotate_refresh_session(token):
     if not user or user.is_locked:
         raise AuthenticationError("Tài khoản không thể tiếp tục đăng nhập")
 
-    new_token, expires_at = _new_refresh_token()
-    refresh_session.token_hash = _hash_refresh_token(new_token)
-    refresh_session.expires_at = expires_at
-    _commit_changes()
-
-    return user, new_token
+    return user
 
 
 def revoke_refresh_session(token):

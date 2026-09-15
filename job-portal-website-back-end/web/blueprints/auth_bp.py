@@ -13,7 +13,7 @@ from web.services.token_service import (
     create_access_token,
     create_refresh_session,
     revoke_refresh_session,
-    rotate_refresh_session,
+    validate_refresh_session,
 )
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
@@ -70,10 +70,10 @@ def login_process():
 @handle_api_errors
 def refresh_access_token():
     refresh_token = request.cookies.get(current_app.config["REFRESH_COOKIE_NAME"])
-    user, new_refresh_token = rotate_refresh_session(refresh_token)
+    user = validate_refresh_session(refresh_token)
 
     response = jsonify({"token": create_access_token(user)})
-    return _set_refresh_cookie(response, new_refresh_token), 200
+    return response, 200
 
 
 @auth_bp.route('/logout', methods=['POST'])

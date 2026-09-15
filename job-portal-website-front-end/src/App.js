@@ -1,4 +1,4 @@
-import React, { useReducer } from "react";
+import React, { useEffect, useReducer } from "react";
 import { HashRouter as Router, Routes, Route } from "react-router-dom";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -38,6 +38,29 @@ function App() {
     MyUserReducer,
     JSON.parse(localStorage.getItem("user")) || null
   );
+
+  useEffect(() => {
+    const handleExpiredSession = () => {
+      dispatch({ type: "LOGOUT" });
+    };
+
+    const handleStorageChange = (event) => {
+      if (
+        (event.key === "token" || event.key === "user") &&
+        event.newValue === null
+      ) {
+        dispatch({ type: "LOGOUT" });
+      }
+    };
+
+    window.addEventListener("auth:logout", handleExpiredSession);
+    window.addEventListener("storage", handleStorageChange);
+
+    return () => {
+      window.removeEventListener("auth:logout", handleExpiredSession);
+      window.removeEventListener("storage", handleStorageChange);
+    };
+  }, []);
 
   return (
     <MyUserContext.Provider value={[user, dispatch]}>

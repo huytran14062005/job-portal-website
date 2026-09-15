@@ -88,6 +88,7 @@ let refreshRequest = null;
 const clearSession = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("user");
+  window.dispatchEvent(new Event("auth:logout"));
 };
 
 authenticatedApi.interceptors.request.use((config) => {
@@ -134,10 +135,14 @@ authenticatedApi.interceptors.response.use(
       originalRequest.headers.Authorization = `Bearer ${token}`;
       return authenticatedApi(originalRequest);
     } catch (refreshError) {
-      clearSession();
+      const refreshStatus = refreshError.response?.status;
 
-      if (window.location.hash !== "#/login") {
-        window.location.hash = "#/login";
+      if (refreshStatus === 401 || refreshStatus === 403) {
+        clearSession();
+
+        if (window.location.hash !== "#/login") {
+          window.location.hash = "#/login";
+        }
       }
 
       return Promise.reject(refreshError);
