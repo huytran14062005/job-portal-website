@@ -26,6 +26,7 @@ def get_profile():
 
     return jsonify({
         "user_id": user.id,
+        "chat_uid": user.chat_uid,
         "username": user.username,
         "email": user.email,
         "role": user.role.value,
@@ -81,6 +82,7 @@ def get_company_profile():
 
     return jsonify({
         "user_id": user.id,
+        "chat_uid": user.chat_uid,
         "username": user.username,
         "email": user.email,
         "role": user.role.value,

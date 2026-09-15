@@ -1,6 +1,7 @@
 
 from datetime import datetime
 from enum import Enum as UserEnum
+import uuid
 
 from flask_login import UserMixin
 from sqlalchemy import Boolean, Column, Date, DateTime, Enum, ForeignKey, Integer, String, Text
@@ -65,6 +66,12 @@ class User(BaseModel, UserMixin):
     applicant_info = relationship("ApplicantInfo", backref="user", uselist=False, cascade="all, delete-orphan")
     company_info = relationship("CompanyInfo", backref="user", uselist=False, cascade="all, delete-orphan")
     refresh_sessions = relationship("RefreshSession", backref="user", lazy=True, cascade="all, delete-orphan")
+
+    @property
+    def chat_uid(self):
+        created_at = self.created_at.isoformat() if self.created_at else ""
+        value = f"job-portal:{self.id}:{self.username}:{created_at}"
+        return str(uuid.uuid5(uuid.NAMESPACE_URL, value))
 
 
 class RefreshSession(BaseModel):

@@ -2,6 +2,7 @@ from flask import Blueprint, current_app, jsonify, request
 
 from web.blueprints.api_errors import handle_api_errors
 from web.middleware.auth_middleware import verify_token
+from web.models import User
 from web.services.auth_service import login_service, register_service
 from web.services.firebase_auth_service import generate_firebase_token
 from web.services.password_reset_service import (
@@ -21,23 +22,33 @@ auth_bp = Blueprint('auth', __name__, url_prefix='/api/auth')
 
 def _set_refresh_cookie(response, token):
     max_age = current_app.config["JWT_REFRESH_TOKEN_EXPIRES_DAYS"] * 24 * 60 * 60
+    secure = current_app.config["REFRESH_COOKIE_SECURE"]
+    samesite = current_app.config["REFRESH_COOKIE_SAMESITE"]
+    partitioned = secure and str(samesite).lower() == "none"
+
     response.set_cookie(
         key=current_app.config["REFRESH_COOKIE_NAME"],
         value=token,
         max_age=max_age,
         httponly=True,
-        secure=current_app.config["REFRESH_COOKIE_SECURE"],
-        samesite=current_app.config["REFRESH_COOKIE_SAMESITE"],
+        secure=secure,
+        samesite=samesite,
+        partitioned=partitioned,
         path="/api/auth",
     )
     return response
 
 
 def _clear_refresh_cookie(response):
+    secure = current_app.config["REFRESH_COOKIE_SECURE"]
+    samesite = current_app.config["REFRESH_COOKIE_SAMESITE"]
+    partitioned = secure and str(samesite).lower() == "none"
+
     response.delete_cookie(
         key=current_app.config["REFRESH_COOKIE_NAME"],
-        secure=current_app.config["REFRESH_COOKIE_SECURE"],
-        samesite=current_app.config["REFRESH_COOKIE_SAMESITE"],
+        secure=secure,
+        samesite=samesite,
+        partitioned=partitioned,
         path="/api/auth",
     )
     return response
@@ -59,7 +70,8 @@ def login_process():
         "user": {
             "id": user.id,
             "username": user.username,
-            "role": user.role.value
+            "role": user.role.value,
+            "chat_uid": user.chat_uid
         }
     })
 
@@ -149,17 +161,17 @@ def reset_password():
 @verify_token
 @handle_api_errors
 def get_firebase_token():
-    user_id = request.user_id
-    user_role = request.user_role
+    user = User.query.get(request.user_id)
+    firebase_uid = user.chat_uid
 
     firebase_token = generate_firebase_token(
-        user_id=user_id,
+        firebase_uid=firebase_uid,
         additional_claims={
-            'role': user_role.value if hasattr(user_role, 'value') else str(user_role)
+            'role': user.role.value
         }
     )
 
     return jsonify({
         "firebase_token": firebase_token,
-        "user_id": user_id
+        "firebase_uid": firebase_uid
     }), 200

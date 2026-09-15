@@ -84,7 +84,7 @@ const CompanyApplications = () => {
       }
 
       chatListRef.current = Firebase.getRecruiterChatList(
-        user.id,
+        authResult.uid,
         (chatList) => {
           if (cancelled) return;
           const map = {};
@@ -454,11 +454,11 @@ const CompanyApplications = () => {
                     title="Nhắn tin với ứng viên"
                   >
                     Nhắn tin
-                    {(unreadMap[String(app.candidate?.id)] || 0) > 0 && (
+                    {(unreadMap[String(app.candidate?.chat_uid)] || 0) > 0 && (
                       <span className="ca-btn-chat-badge">
-                        {unreadMap[String(app.candidate.id)] > 99
+                        {unreadMap[String(app.candidate.chat_uid)] > 99
                           ? "99+"
-                          : unreadMap[String(app.candidate.id)]}
+                          : unreadMap[String(app.candidate.chat_uid)]}
                       </span>
                     )}
                   </button>
@@ -764,6 +764,7 @@ const CompanyApplications = () => {
           isOpen={showChatModal}
           onClose={() => setShowChatModal(false)}
           otherUserId={selectedCandidate.id}
+          otherUserChatUid={selectedCandidate.chat_uid}
           otherUserName={selectedCandidate.full_name || selectedCandidate.email}
           otherUserAvatar={selectedCandidate.avatar_url}
           otherUserRole="ungvien"

@@ -145,6 +145,7 @@ def get_company_by_id(company_id):
     return {
         'id': company.id,
         'user_id': company.id,
+        'chat_uid': company.user.chat_uid,
         'company_name': company.company_name,
         'logo_url': company.logo_url,
         'industry': company.industry,

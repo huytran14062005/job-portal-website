@@ -4,6 +4,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { MyUserContext } from "../configs/Contexts";
 import Apis, { authApis, endpoints } from "../configs/Apis";
 import { UserRole } from "../configs/constants";
+import { signOutFirebase } from "../utils/firebase";
 import NotificationBell from "./NotificationBell";
 import { useToast } from "./Toast";
 import {
@@ -120,6 +121,7 @@ const Header = () => {
   const handleConfirmLogout = async () => {
     setShowLogoutConfirm(false);
     await Apis.post(endpoints.logout).catch(() => null);
+    await signOutFirebase();
     dispatch({ type: "LOGOUT" });
     setUserProfile(null);
     toast.success("Đăng xuất thành công!");

@@ -50,6 +50,7 @@ def get_company_applications():
             },
             "candidate": {
                 "id": candidate.id,
+                "chat_uid": candidate.user.chat_uid,
                 "full_name": candidate.full_name,
                 "email": candidate.user.email if candidate.user else None,
                 "phone": candidate.phone,
@@ -95,6 +96,7 @@ def get_application_detail(application_id):
         },
         "candidate": {
             "id": candidate.id,
+            "chat_uid": candidate.user.chat_uid,
             "full_name": candidate.full_name,
             "email": candidate.user.email if candidate.user else None,
             "phone": candidate.phone,

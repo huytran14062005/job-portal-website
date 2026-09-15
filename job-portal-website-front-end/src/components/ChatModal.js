@@ -38,6 +38,7 @@ const ChatModal = ({
   isOpen,
   onClose,
   otherUserId,
+  otherUserChatUid,
   otherUserName,
   otherUserAvatar,
   otherUserRole, 
@@ -52,6 +53,7 @@ const ChatModal = ({
   const [error, setError] = useState(null);
   const [sending, setSending] = useState(false);
   const [currentUserProfile, setCurrentUserProfile] = useState(null);
+  const [currentUserChatUid, setCurrentUserChatUid] = useState(null);
 
   const messagesRef = useRef(null);
   const messagesContainerRef = useRef(null);
@@ -89,7 +91,13 @@ const ChatModal = ({
 
   
   useEffect(() => {
-    if (!isOpen || !otherUserId || !user) {
+    if (!isOpen) {
+      return;
+    }
+
+    if (!user || !otherUserId || !otherUserChatUid) {
+      setLoading(false);
+      setError("Không thể xác định tài khoản trong cuộc trò chuyện.");
       return;
     }
 
@@ -122,75 +130,73 @@ const ChatModal = ({
             : profileData,
         );
 
-        
-        const tokenResponse = await authApis().get(endpoints["firebase-token"]);
+        const authResult = await Firebase.ensureFirebaseAuth();
 
-        if (tokenResponse.data && tokenResponse.data.firebase_token) {
-          
-          const signInResult = await Firebase.signInFirebase(
-            tokenResponse.data.firebase_token
-          );
-
-          if (!signInResult.success) {
-            console.error("[ChatModal] Firebase sign in failed:", signInResult.error);
-            clearTimeout(timeoutId);
-            setError("Không thể kết nối Firebase: " + signInResult.error);
-            setLoading(false);
-            return;
-          }
-
-          
-          const recruiterId =
-            user.role === "nhatuyendung" ? user.id : otherUserId;
-          const candidateId = user.role === "ungvien" ? user.id : otherUserId;
-
-          
-          await new Promise(resolve => setTimeout(resolve, 500));
-
-          messagesRef.current = Firebase.listenToMessages(
-            recruiterId,
-            candidateId,
-            (newMessages) => {
-              clearTimeout(timeoutId);
-              setMessages(newMessages);
-              setLoading(false);
-            }
-          );
-
-          
-          if (user.role === "nhatuyendung") {
-            await Firebase.resetRecruiterUnreadCount(recruiterId, candidateId);
-          } else {
-            await Firebase.resetCandidateUnreadCount(candidateId, recruiterId);
-          }
-          
-          
-          try {
-            
-            const notificationsResponse = await authApis().get("/notifications", {
-              params: { per_page: 100 }
-            });
-            
-            
-            const messageNotifications = notificationsResponse.data.notifications.filter(
-              n => n.type === "tin nhắn mới" && 
-                   n.related_type === "message" && 
-                   n.related_id === otherUserId &&
-                   !n.is_read
-            );
-            
-            
-            for (const notif of messageNotifications) {
-              await authApis().put(`/notifications/${notif.id}/read`);
-            }
-          } catch (error) {
-            console.error("[ChatModal] Error marking notifications as read:", error);
-          }
-        } else {
-          console.error("[ChatModal] No firebase_token in response");
+        if (!authResult.success) {
           clearTimeout(timeoutId);
-          setError("Không thể lấy Firebase token");
+          setError("Không thể kết nối Firebase: " + authResult.error);
           setLoading(false);
+          return;
+        }
+
+        const currentChatUid = authResult.uid;
+        const recruiterId =
+          user.role === "nhatuyendung" ? currentChatUid : otherUserChatUid;
+        const candidateId =
+          user.role === "ungvien" ? currentChatUid : otherUserChatUid;
+
+        setCurrentUserChatUid(currentChatUid);
+
+        const roomResult = await Firebase.ensureChatRoom(
+          recruiterId,
+          candidateId,
+        );
+
+        if (!roomResult.success) {
+          clearTimeout(timeoutId);
+          setError("Không thể mở cuộc trò chuyện: " + roomResult.error);
+          setLoading(false);
+          return;
+        }
+
+        messagesRef.current = Firebase.listenToMessages(
+          recruiterId,
+          candidateId,
+          (newMessages) => {
+            clearTimeout(timeoutId);
+            setMessages(newMessages);
+            setLoading(false);
+          },
+        );
+
+        if (user.role === "nhatuyendung") {
+          await Firebase.resetRecruiterUnreadCount(recruiterId, candidateId);
+        } else {
+          await Firebase.resetCandidateUnreadCount(candidateId, recruiterId);
+        }
+
+        try {
+          const notificationsResponse = await authApis().get("/notifications", {
+            params: { per_page: 100 },
+          });
+
+          const messageNotifications =
+            notificationsResponse.data.notifications.filter(
+              (notification) =>
+                notification.type === "tin nhắn mới" &&
+                notification.related_type === "message" &&
+                notification.related_id === otherUserId &&
+                !notification.is_read,
+            );
+
+          for (const notification of messageNotifications) {
+            await authApis().put(`/notifications/${notification.id}/read`);
+          }
+        } catch (notificationError) {
+          console.error(
+            "[ChatModal] Error marking notifications as read:",
+            notificationError,
+          );
         }
       } catch (err) {
         console.error("[ChatModal] Init chat error:", err);
@@ -209,23 +215,33 @@ const ChatModal = ({
         Firebase.stopListeningToMessages(messagesRef.current);
       }
     };
-  }, [isOpen, otherUserId, user]);
+  }, [isOpen, otherUserId, otherUserChatUid, user]);
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || sending || !currentUserProfile) return;
+    if (
+      !newMessage.trim() ||
+      sending ||
+      !currentUserProfile ||
+      !currentUserChatUid ||
+      !otherUserChatUid
+    ) {
+      return;
+    }
 
     setSending(true);
 
     try {
-      const recruiterId = user.role === "nhatuyendung" ? user.id : otherUserId;
-      const candidateId = user.role === "ungvien" ? user.id : otherUserId;
+      const recruiterId =
+        user.role === "nhatuyendung" ? currentUserChatUid : otherUserChatUid;
+      const candidateId =
+        user.role === "ungvien" ? currentUserChatUid : otherUserChatUid;
 
       
       const result = await Firebase.sendMessage(
         recruiterId,
         candidateId,
-        user.id,
+        currentUserChatUid,
         user.username,
         user.role,
         newMessage.trim()
@@ -397,7 +413,7 @@ const ChatModal = ({
 
                   <div
                     className={`chat-message ${
-                      msg.sender_id === user.id ? "sent" : "received"
+                      msg.sender_id === currentUserChatUid ? "sent" : "received"
                     }${grouped ? " grouped" : ""}`}
                   >
                     <div className="message-content">

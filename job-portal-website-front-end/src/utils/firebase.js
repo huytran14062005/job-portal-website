@@ -1,5 +1,5 @@
 import { initializeApp } from "firebase/app";
-import { getAuth, signInWithCustomToken } from "firebase/auth";
+import { getAuth, signInWithCustomToken, signOut } from "firebase/auth";
 import {
   getDatabase,
   ref,
@@ -8,6 +8,7 @@ import {
   query,
   orderByChild,
   set,
+  update,
   onValue,
   get,
 } from "firebase/database";
@@ -31,6 +32,12 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const database = getDatabase(app);
 
+const chatRoot =
+  process.env.REACT_APP_FIREBASE_DATA_ROOT ||
+  (process.env.NODE_ENV === "production" ? "production" : "development");
+
+const chatPath = (path) => `${chatRoot}/${path}`;
+
 
 export const generateRoomId = (recruiterId, candidateId) => {
   return `recruiter_${recruiterId}_candidate_${candidateId}`;
@@ -51,39 +58,52 @@ export const signInFirebase = async (customToken) => {
 };
 
 
-let firebaseAuthPromise = null;
-
-
 export const ensureFirebaseAuth = async () => {
-  if (auth.currentUser) {
-    return { success: true, uid: auth.currentUser.uid };
+  try {
+    const response = await authApis().get(endpoints["firebase-token"]);
+    const token = response.data?.firebase_token;
+    const firebaseUid = response.data?.firebase_uid;
+
+    if (!token || !firebaseUid) {
+      return { success: false, error: "Không lấy được Firebase token" };
+    }
+
+    if (auth.currentUser?.uid === firebaseUid) {
+      return { success: true, uid: firebaseUid };
+    }
+
+    return await signInFirebase(token);
+  } catch (error) {
+    console.error("[Firebase] ensureFirebaseAuth error:", error);
+    return { success: false, error: error.message };
   }
+};
 
-  if (!firebaseAuthPromise) {
-    firebaseAuthPromise = (async () => {
-      try {
-        const res = await authApis().get(endpoints["firebase-token"]);
-        const token = res.data?.firebase_token;
-        if (!token) {
-          return { success: false, error: "Không lấy được Firebase token" };
-        }
-        return await signInFirebase(token);
-      } catch (error) {
-        console.error("[Firebase] ensureFirebaseAuth error:", error);
-        return { success: false, error: error.message };
-      }
-    })();
+export const signOutFirebase = async () => {
+  try {
+    if (auth.currentUser) {
+      await signOut(auth);
+    }
+  } catch (error) {
+    console.error("[Firebase] Sign out error:", error);
+  }
+};
 
-    
-    firebaseAuthPromise = firebaseAuthPromise.then((result) => {
-      if (!result.success) {
-        firebaseAuthPromise = null;
-      }
-      return result;
+export const ensureChatRoom = async (recruiterId, candidateId) => {
+  try {
+    const roomId = generateRoomId(recruiterId, candidateId);
+    const roomRef = ref(database, chatPath(`job_chats/${roomId}`));
+
+    await update(roomRef, {
+      recruiter_uid: recruiterId,
+      candidate_uid: candidateId,
     });
-  }
 
-  return firebaseAuthPromise;
+    return { success: true };
+  } catch (error) {
+    console.error("[Firebase] Ensure chat room error:", error);
+    return { success: false, error: error.message };
+  }
 };
 
 
@@ -96,8 +116,16 @@ export const sendMessage = async (
   text,
 ) => {
   try {
+    const roomResult = await ensureChatRoom(recruiterId, candidateId);
+    if (!roomResult.success) {
+      return roomResult;
+    }
+
     const roomId = generateRoomId(recruiterId, candidateId);
-    const messagesRef = ref(database, `job_chats/${roomId}/messages`);
+    const messagesRef = ref(
+      database,
+      chatPath(`job_chats/${roomId}/messages`),
+    );
     await push(messagesRef, {
       sender_id: senderId,
       sender_name: senderName,
@@ -117,7 +145,10 @@ export const listenToMessages = (recruiterId, candidateId, callback) => {
   try {
     const roomId = generateRoomId(recruiterId, candidateId);
 
-    const messagesRef = ref(database, `job_chats/${roomId}/messages`);
+    const messagesRef = ref(
+      database,
+      chatPath(`job_chats/${roomId}/messages`),
+    );
     const messagesQuery = query(messagesRef, orderByChild("timestamp"));
 
     onValue(messagesQuery, (snapshot) => {
@@ -160,7 +191,7 @@ export const saveRecruiterChatMetadata = async (
   try {
     const metadataRef = ref(
       database,
-      `recruiter_chats/${recruiterId}/candidates/${candidateId}`,
+      chatPath(`recruiter_chats/${recruiterId}/candidates/${candidateId}`),
     );
 
     const snapshot = await get(metadataRef);
@@ -209,7 +240,7 @@ export const saveCandidateChatMetadata = async (
   try {
     const metadataRef = ref(
       database,
-      `candidate_chats/${candidateId}/recruiters/${recruiterId}`,
+      chatPath(`candidate_chats/${candidateId}/recruiters/${recruiterId}`),
     );
 
     const snapshot = await get(metadataRef);
@@ -239,7 +270,10 @@ export const saveCandidateChatMetadata = async (
 
 
 export const getRecruiterChatList = (recruiterId, callback) => {
-  const chatListRef = ref(database, `recruiter_chats/${recruiterId}/candidates`);
+  const chatListRef = ref(
+    database,
+    chatPath(`recruiter_chats/${recruiterId}/candidates`),
+  );
 
   onValue(
     chatListRef,
@@ -268,7 +302,7 @@ export const resetRecruiterUnreadCount = async (recruiterId, candidateId) => {
   try {
     const metadataRef = ref(
       database,
-      `recruiter_chats/${recruiterId}/candidates/${candidateId}`,
+      chatPath(`recruiter_chats/${recruiterId}/candidates/${candidateId}`),
     );
 
     
@@ -280,7 +314,9 @@ export const resetRecruiterUnreadCount = async (recruiterId, candidateId) => {
     await set(
       ref(
         database,
-        `recruiter_chats/${recruiterId}/candidates/${candidateId}/unreadCount`,
+        chatPath(
+          `recruiter_chats/${recruiterId}/candidates/${candidateId}/unreadCount`,
+        ),
       ),
       0,
     );
@@ -296,7 +332,7 @@ export const resetCandidateUnreadCount = async (candidateId, recruiterId) => {
   try {
     const metadataRef = ref(
       database,
-      `candidate_chats/${candidateId}/recruiters/${recruiterId}`,
+      chatPath(`candidate_chats/${candidateId}/recruiters/${recruiterId}`),
     );
 
     
@@ -308,7 +344,9 @@ export const resetCandidateUnreadCount = async (candidateId, recruiterId) => {
     await set(
       ref(
         database,
-        `candidate_chats/${candidateId}/recruiters/${recruiterId}/candidateUnreadCount`,
+        chatPath(
+          `candidate_chats/${candidateId}/recruiters/${recruiterId}/candidateUnreadCount`,
+        ),
       ),
       0,
     );
@@ -327,7 +365,9 @@ export const listenToCandidateUnreadWithRecruiter = (
 ) => {
   const unreadRef = ref(
     database,
-    `candidate_chats/${candidateId}/recruiters/${recruiterId}/candidateUnreadCount`,
+    chatPath(
+      `candidate_chats/${candidateId}/recruiters/${recruiterId}/candidateUnreadCount`,
+    ),
   );
 
   onValue(

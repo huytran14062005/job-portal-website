@@ -31,6 +31,7 @@ import AdminStats from "./screens/Admin/AdminStats";
 import { MyUserContext } from "./configs/Contexts";
 import MyUserReducer from "./reducers/MyUserReducer";
 import { UserRole } from "./configs/constants";
+import { signOutFirebase } from "./utils/firebase";
 import "./css/Style.css";
 
 function App() {
@@ -41,6 +42,7 @@ function App() {
 
   useEffect(() => {
     const handleExpiredSession = () => {
+      signOutFirebase();
       dispatch({ type: "LOGOUT" });
     };
 
@@ -49,6 +51,7 @@ function App() {
         (event.key === "token" || event.key === "user") &&
         event.newValue === null
       ) {
+        signOutFirebase();
         dispatch({ type: "LOGOUT" });
       }
     };

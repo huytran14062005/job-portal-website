@@ -51,7 +51,7 @@ const CompanyDetail = () => {
   
   
   useEffect(() => {
-    const recruiterId = company?.user_id;
+    const recruiterId = company?.chat_uid;
 
     if (!user || user.role !== "ungvien" || !recruiterId) {
       setChatUnreadCount(0);
@@ -74,7 +74,7 @@ const CompanyDetail = () => {
       }
 
       chatUnreadRef.current = Firebase.listenToCandidateUnreadWithRecruiter(
-        user.id,
+        authResult.uid,
         recruiterId,
         (unread) => {
           if (cancelled) return;
@@ -92,7 +92,7 @@ const CompanyDetail = () => {
         chatUnreadRef.current = null;
       }
     };
-  }, [user, company?.user_id]);
+  }, [user, company?.chat_uid]);
 
   useEffect(() => {
     fetchCompanyJobs();
@@ -711,6 +711,7 @@ const CompanyDetail = () => {
           isOpen={showChatModal}
           onClose={() => setShowChatModal(false)}
           otherUserId={company.user_id}
+          otherUserChatUid={company.chat_uid}
           otherUserName={company.company_name}
           otherUserAvatar={company.logo_url}
           otherUserRole="nhatuyendung"
