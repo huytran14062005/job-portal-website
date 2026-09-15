@@ -14,18 +14,9 @@ import {
 } from "firebase/database";
 import { authApis, endpoints } from "../configs/Apis";
 
-
-
-const firebaseConfig = {
-  apiKey: "AIzaSyDHYIphOs0AJN9ic1e6CTXpVMus5OAyGiQ",
-  authDomain: "job-searching-2e6f2.firebaseapp.com",
-  databaseURL: "https://job-searching-2e6f2-default-rtdb.asia-southeast1.firebasedatabase.app",
-  projectId: "job-searching-2e6f2",
-  storageBucket: "job-searching-2e6f2.firebasestorage.app",
-  messagingSenderId: "1096889618829",
-  appId: "1:1096889618829:web:77f394a02e30be6657edc4"
-};
-
+const firebaseConfig = JSON.parse(
+  process.env.REACT_APP_FIREBASE_CONFIG || "{}",
+);
 
 const app = initializeApp(firebaseConfig);
 
@@ -38,11 +29,9 @@ const chatRoot =
 
 const chatPath = (path) => `${chatRoot}/${path}`;
 
-
 export const generateRoomId = (recruiterId, candidateId) => {
   return `recruiter_${recruiterId}_candidate_${candidateId}`;
 };
-
 
 export const signInFirebase = async (customToken) => {
   try {
@@ -56,7 +45,6 @@ export const signInFirebase = async (customToken) => {
     return { success: false, error: error.message };
   }
 };
-
 
 export const ensureFirebaseAuth = async () => {
   try {
@@ -106,7 +94,6 @@ export const ensureChatRoom = async (recruiterId, candidateId) => {
   }
 };
 
-
 export const sendMessage = async (
   recruiterId,
   candidateId,
@@ -122,14 +109,11 @@ export const sendMessage = async (
     }
 
     const roomId = generateRoomId(recruiterId, candidateId);
-    const messagesRef = ref(
-      database,
-      chatPath(`job_chats/${roomId}/messages`),
-    );
+    const messagesRef = ref(database, chatPath(`job_chats/${roomId}/messages`));
     await push(messagesRef, {
       sender_id: senderId,
       sender_name: senderName,
-      sender_role: senderRole, 
+      sender_role: senderRole,
       text: text,
       timestamp: Date.now(),
     });
@@ -140,30 +124,30 @@ export const sendMessage = async (
   }
 };
 
-
 export const listenToMessages = (recruiterId, candidateId, callback) => {
   try {
     const roomId = generateRoomId(recruiterId, candidateId);
 
-    const messagesRef = ref(
-      database,
-      chatPath(`job_chats/${roomId}/messages`),
-    );
+    const messagesRef = ref(database, chatPath(`job_chats/${roomId}/messages`));
     const messagesQuery = query(messagesRef, orderByChild("timestamp"));
 
-    onValue(messagesQuery, (snapshot) => {
-      const messages = [];
-      snapshot.forEach((child) => {
-        messages.push({
-          id: child.key,
-          ...child.val(),
+    onValue(
+      messagesQuery,
+      (snapshot) => {
+        const messages = [];
+        snapshot.forEach((child) => {
+          messages.push({
+            id: child.key,
+            ...child.val(),
+          });
         });
-      });
-      callback(messages);
-    }, (error) => {
-      console.error("[Firebase] Listen error:", error);
-      callback([]);
-    });
+        callback(messages);
+      },
+      (error) => {
+        console.error("[Firebase] Listen error:", error);
+        callback([]);
+      },
+    );
 
     return messagesRef;
   } catch (error) {
@@ -173,11 +157,9 @@ export const listenToMessages = (recruiterId, candidateId, callback) => {
   }
 };
 
-
 export const stopListeningToMessages = (messagesRef) => {
   off(messagesRef);
 };
-
 
 export const saveRecruiterChatMetadata = async (
   recruiterId,
@@ -205,8 +187,6 @@ export const saveRecruiterChatMetadata = async (
       lastMessageTime: Date.now(),
     };
 
-    
-    
     if (isRecruiterSending) {
       const currentCandidateUnread = currentData.candidateUnreadCount || 0;
       updates.candidateUnreadCount = incrementUnread
@@ -226,7 +206,6 @@ export const saveRecruiterChatMetadata = async (
     return { success: false, error: error.message };
   }
 };
-
 
 export const saveCandidateChatMetadata = async (
   candidateId,
@@ -268,7 +247,6 @@ export const saveCandidateChatMetadata = async (
   }
 };
 
-
 export const getRecruiterChatList = (recruiterId, callback) => {
   const chatListRef = ref(
     database,
@@ -297,7 +275,6 @@ export const getRecruiterChatList = (recruiterId, callback) => {
   return chatListRef;
 };
 
-
 export const resetRecruiterUnreadCount = async (recruiterId, candidateId) => {
   try {
     const metadataRef = ref(
@@ -305,7 +282,6 @@ export const resetRecruiterUnreadCount = async (recruiterId, candidateId) => {
       chatPath(`recruiter_chats/${recruiterId}/candidates/${candidateId}`),
     );
 
-    
     const snapshot = await get(metadataRef);
     if (!snapshot.exists()) {
       return { success: true };
@@ -327,7 +303,6 @@ export const resetRecruiterUnreadCount = async (recruiterId, candidateId) => {
   }
 };
 
-
 export const resetCandidateUnreadCount = async (candidateId, recruiterId) => {
   try {
     const metadataRef = ref(
@@ -335,7 +310,6 @@ export const resetCandidateUnreadCount = async (candidateId, recruiterId) => {
       chatPath(`candidate_chats/${candidateId}/recruiters/${recruiterId}`),
     );
 
-    
     const snapshot = await get(metadataRef);
     if (!snapshot.exists()) {
       return { success: true };
@@ -356,7 +330,6 @@ export const resetCandidateUnreadCount = async (candidateId, recruiterId) => {
     return { success: false, error: error.message };
   }
 };
-
 
 export const listenToCandidateUnreadWithRecruiter = (
   candidateId,
