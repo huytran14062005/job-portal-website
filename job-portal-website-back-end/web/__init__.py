@@ -63,11 +63,9 @@ try:
 
     cred = None
 
-    # Trên Vercel, đọc service account trực tiếp từ một biến môi trường Secret.
     if firebase_cred_json:
         cred = credentials.Certificate(json.loads(firebase_cred_json))
     else:
-        # Khi chạy local, tiếp tục hỗ trợ file JSON như trước.
         firebase_cred_filename = os.getenv(
             'FIREBASE_SERVICE_ACCOUNT_PATH',
             'job-searching-firebase-adminsdk.json'

@@ -2,12 +2,10 @@ from datetime import datetime, timezone
 
 
 def utc_now_naive():
-    """Return the current UTC time for storage in MySQL DATETIME columns."""
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def to_utc_isoformat(value):
-    """Serialize a database datetime with an explicit UTC offset."""
     if value is None:
         return None
 

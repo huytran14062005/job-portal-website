@@ -101,7 +101,6 @@ def request_password_reset_service(email):
     otp = f"{secrets.randbelow(1_000_000):06d}"
     challenge_token = secrets.token_urlsafe(32)
 
-    # luu de so sanh voi otp ngdung nhap
     _password_reset_requests[challenge_token] = {
         "email": clean_email,
         "user_id": user.id,

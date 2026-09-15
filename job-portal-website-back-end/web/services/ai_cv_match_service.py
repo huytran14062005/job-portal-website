@@ -50,7 +50,6 @@ def extract_cv_text(cv):
     except Exception as ex:
         raise ValueError(f"Không thể tải CV từ URL: {str(ex)}")
 
-    # lay phan duoi file
     extension = Path(cv.file_name or cv.cv_url).suffix.lower()
     if extension == ".pdf":
         text = _extract_pdf_text(response.content)
