@@ -16,7 +16,6 @@ const PDFViewer = ({ pdfUrl }) => {
     if (!pdfUrl) return;
 
     let cancelled = false;
-    let blobUrl = "";
 
     const loadPdf = async () => {
       try {
@@ -51,10 +50,8 @@ const PDFViewer = ({ pdfUrl }) => {
           throw new Error("Định dạng CV này không phải PDF có thể xem trước.");
         }
 
-        blobUrl = URL.createObjectURL(blob);
-
         const loadingTask = pdfjsLib.getDocument({
-          url: blobUrl,
+          data: bytes,
           cMapUrl: `https://cdn.jsdelivr.net/npm/pdfjs-dist@${pdfjsLib.version}/cmaps/`,
           cMapPacked: true,
         });
@@ -78,7 +75,6 @@ const PDFViewer = ({ pdfUrl }) => {
     loadPdf();
     return () => {
       cancelled = true;
-      if (blobUrl) URL.revokeObjectURL(blobUrl);
     };
   }, [pdfUrl]);
 
