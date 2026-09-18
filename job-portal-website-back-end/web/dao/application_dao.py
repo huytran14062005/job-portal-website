@@ -54,7 +54,7 @@ def get_applications_for_company(company_id, page=1, job_post_id=None, status=No
     query = (db.session.query(Application)
              .options(
                  joinedload(Application.candidate).joinedload(ApplicantInfo.user),
-                 joinedload(Application.job_post).joinedload(JobPost.company),
+                 joinedload(Application.job_post),
                  joinedload(Application.cv_file)
              )
              .join(JobPost, Application.job_post_id == JobPost.id)
@@ -79,7 +79,7 @@ def get_application_by_id_for_company(application_id, company_id):
     return (db.session.query(Application)
             .options(
                 joinedload(Application.candidate).joinedload(ApplicantInfo.user),
-                joinedload(Application.job_post).joinedload(JobPost.company),
+                joinedload(Application.job_post),
                 joinedload(Application.cv_file)
             )
             .join(JobPost, Application.job_post_id == JobPost.id)
