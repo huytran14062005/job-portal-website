@@ -284,6 +284,11 @@
   white-space: nowrap;
 }
 
+.au-table .aj-col-location,
+.au-table .aj-col-status {
+  white-space: nowrap;
+}
+
 .au-col-actions .au-btn + .au-btn {
   margin-left: 8px;
 }

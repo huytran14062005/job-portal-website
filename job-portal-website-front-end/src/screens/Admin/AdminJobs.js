@@ -357,8 +357,8 @@ const AdminJobs = () => {
               <thead>
                 <tr>
                   <th>Bài đăng</th>
-                  <th>Địa điểm</th>
-                  <th>Trạng thái</th>
+                  <th className="aj-col-location">Địa điểm</th>
+                  <th className="aj-col-status">Trạng thái</th>
                   <th>Hạn nộp</th>
                   <th>Ngày đăng</th>
                   <th className="au-col-actions">Thao tác</th>
@@ -375,8 +375,12 @@ const AdminJobs = () => {
                         </span>
                       </div>
                     </td>
-                    <td>{displayValue(job.location_name)}</td>
-                    <td>{renderStatusBadge(job.status)}</td>
+                    <td className="aj-col-location">
+                      {displayValue(job.location_name)}
+                    </td>
+                    <td className="aj-col-status">
+                      {renderStatusBadge(job.status)}
+                    </td>
                     <td>{formatDate(job.deadline)}</td>
                     <td>{formatDate(job.created_at)}</td>
                     <td className="au-col-actions">
