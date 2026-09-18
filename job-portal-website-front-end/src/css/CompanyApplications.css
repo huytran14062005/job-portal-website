@@ -225,6 +225,11 @@
   color: #3b82f6;
 }
 
+.ca-job-label {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 .ca-job strong {
   color: #111827;
 }

@@ -388,7 +388,8 @@ const CompanyApplications = () => {
                   </div>
 
                   <div className="ca-job">
-                    Ứng tuyển: <strong>{app.job_post.title}</strong>
+                    <span className="ca-job-label">Ứng tuyển:</span>
+                    <strong>{app.job_post.title}</strong>
                   </div>
 
                   <div className="ca-meta">
