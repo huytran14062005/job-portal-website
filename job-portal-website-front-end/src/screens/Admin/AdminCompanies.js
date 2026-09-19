@@ -341,7 +341,6 @@ const AdminCompanies = () => {
         `${isLocked ? "Đã khóa" : "Đã mở khóa"} tài khoản công ty "${companyToLock.company_name}"`,
       );
       setCompanyToLock(null);
-      fetchPendingCount();
       fetchCompanies();
     } catch (err) {
       console.error("Error updating company account lock:", err);

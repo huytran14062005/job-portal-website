@@ -111,6 +111,16 @@ def get_application_by_job(candidate_id, job_post_id):
     ).order_by(Application.applied_at.desc(), Application.id.desc()).first())
 
 
+def has_candidate_applied_to_company(candidate_id, company_id):
+    return (db.session.query(Application.id)
+            .join(JobPost, Application.job_post_id == JobPost.id)
+            .filter(
+                Application.candidate_id == candidate_id,
+                JobPost.company_id == company_id
+            )
+            .first() is not None)
+
+
 def apply_job_with_cv_file(candidate_id, job_post_id, cv_file):
     application = Application(
         candidate_id=candidate_id,

@@ -27,6 +27,8 @@ export const endpoints = {
   companies: "/companies",
   "company-detail": (companyId) => `/companies/${companyId}`,
   "company-jobs": (companyId) => `/companies/${companyId}/jobs`,
+  "company-chat-access": (companyId) =>
+    `/companies/${companyId}/chat-access`,
   "apply-job": (jobId) => `/jobs/${jobId}/apply`,
   "check-applied": (jobId) => `/jobs/${jobId}/check-applied`,
   "my-applications": "/applications/candidate",

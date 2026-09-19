@@ -199,7 +199,7 @@ const CompanyDetail = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleOpenChat = () => {
+  const handleOpenChat = async () => {
     if (!user) {
       alert("Vui lòng đăng nhập để nhắn tin với công ty");
       navigate("/login");
@@ -209,7 +209,21 @@ const CompanyDetail = () => {
       alert("Chỉ ứng viên mới có thể nhắn tin với công ty");
       return;
     }
-    setShowChatModal(true);
+
+    try {
+      const response = await authApis().get(
+        endpoints["company-chat-access"](companyId),
+      );
+
+      if (!response.data.can_chat) {
+        toast.warning("Bạn cần nộp đơn ứng tuyển vào công ty trước khi nhắn tin");
+        return;
+      }
+
+      setShowChatModal(true);
+    } catch (err) {
+      toast.error(getApiError(err, "Không thể kiểm tra quyền nhắn tin"));
+    }
   };
 
   if (loading) {

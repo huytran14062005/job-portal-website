@@ -26,14 +26,10 @@ def get_jobs_list():
     page, per_page = parse_paging_args(request.args.get('page'), request.args.get('per_page'))
     keyword = request.args.get('keyword', '').strip()
 
-    company_id = request.args.get('company_id')
-    company_id = int(company_id) if company_id else None
-
     jobs, total = dao.get_all_jobs(
         page=page,
         per_page=per_page,
         status=parse_post_status_filter(request.args.get('status')),
-        company_id=company_id,
         keyword=keyword or None
     )
 

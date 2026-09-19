@@ -31,7 +31,8 @@ from .application_dao import (
     get_application_of_own_candidate, get_applications_for_company,
     apply_job_with_cv_file,
     get_application_by_id_for_company, update_application_status,
-    get_application_by_job, reapply_job_with_cv_file
+    get_application_by_job, has_candidate_applied_to_company,
+    reapply_job_with_cv_file
 )
 from .cv_dao import (
     create_cv_file, get_cv_files, get_cv_file_by_id, get_cv_files_by_ids,
@@ -91,7 +92,8 @@ __all__ = [
     'get_application_of_own_candidate', 'get_applications_for_company',
     'apply_job_with_cv_file',
     'get_application_by_id_for_company', 'update_application_status',
-    'get_application_by_job', 'reapply_job_with_cv_file',
+    'get_application_by_job', 'has_candidate_applied_to_company',
+    'reapply_job_with_cv_file',
 
 
     'create_cv_file', 'get_cv_files', 'get_cv_file_by_id', 'get_cv_files_by_ids',

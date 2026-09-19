@@ -15,7 +15,7 @@ def _application_count_subquery():
     )
 
 
-def get_all_jobs(page=1, per_page=None, status=None, company_id=None, keyword=None):
+def get_all_jobs(page=1, per_page=None, status=None, keyword=None):
     app_count = _application_count_subquery()
 
     query = (
@@ -35,9 +35,6 @@ def get_all_jobs(page=1, per_page=None, status=None, company_id=None, keyword=No
 
     if status:
         query = query.filter(JobPost.status == status)
-
-    if company_id:
-        query = query.filter(JobPost.company_id == company_id)
 
     if keyword:
         kw = f"%{keyword.strip()}%"

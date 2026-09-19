@@ -92,3 +92,16 @@ def apply_job_view(job_id):
 @handle_api_errors
 def check_applied_view(job_id):
     return jsonify(get_apply_state_service(request.user_id, job_id)), 200
+
+
+@applications_bp.route('/companies/<int:company_id>/chat-access', methods=['GET'])
+@verify_token
+@verify_role(UserRole.UNGVIEN)
+@handle_api_errors
+def check_company_chat_access(company_id):
+    can_chat = dao.has_candidate_applied_to_company(
+        candidate_id=request.user_id,
+        company_id=company_id
+    )
+
+    return jsonify({"can_chat": can_chat}), 200
