@@ -29,7 +29,6 @@ const Register = () => {
     e.preventDefault();
     setError("");
 
-    
     try {
       setLoading(true);
       const response = await Apis.post(endpoints.register, {
@@ -41,7 +40,7 @@ const Register = () => {
       });
 
       if (response.status === 201) {
-        toast.success("Đăng ký thành công! Hãy tiến hành đăng nhập.");
+        toast.success("Đăng ký thành công! Giờ bạn có thể đăng nhập.");
         navigate("/login");
       }
     } catch (err) {
