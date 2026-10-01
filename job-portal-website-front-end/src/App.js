@@ -86,7 +86,7 @@ function App() {
                     <Route
                       path="/company/my-jobs"
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute roles={[UserRole.NHATUYENDUNG]}>
                           <CompanyMyJobs />
                         </ProtectedRoute>
                       }
@@ -94,7 +94,7 @@ function App() {
                     <Route
                       path="/company/my-jobs/:jobId"
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute roles={[UserRole.NHATUYENDUNG]}>
                           <CompanyJobDetail />
                         </ProtectedRoute>
                       }
@@ -102,7 +102,7 @@ function App() {
                     <Route
                       path="/company/my-jobs/edit/:jobId"
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute roles={[UserRole.NHATUYENDUNG]}>
                           <EditJob />
                         </ProtectedRoute>
                       }
@@ -110,7 +110,7 @@ function App() {
                     <Route
                       path="/company/profile"
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute roles={[UserRole.NHATUYENDUNG]}>
                           <CompanyProfile />
                         </ProtectedRoute>
                       }
@@ -118,7 +118,7 @@ function App() {
                     <Route
                       path="/company/applications"
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute roles={[UserRole.NHATUYENDUNG]}>
                           <CompanyApplications />
                         </ProtectedRoute>
                       }
@@ -126,7 +126,7 @@ function App() {
                     <Route
                       path="/company/post-job"
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute roles={[UserRole.NHATUYENDUNG]}>
                           <PostJob />
                         </ProtectedRoute>
                       }
@@ -134,7 +134,7 @@ function App() {
                     <Route
                       path="/saved-jobs"
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute roles={[UserRole.UNGVIEN]}>
                           <SavedJobs />
                         </ProtectedRoute>
                       }
@@ -142,7 +142,7 @@ function App() {
                     <Route
                       path="/profile"
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute roles={[UserRole.UNGVIEN]}>
                           <Profile />
                         </ProtectedRoute>
                       }
@@ -150,7 +150,7 @@ function App() {
                     <Route
                       path="/my-applications"
                       element={
-                        <ProtectedRoute>
+                        <ProtectedRoute roles={[UserRole.UNGVIEN]}>
                           <MyApplications />
                         </ProtectedRoute>
                       }
